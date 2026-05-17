@@ -1,13 +1,11 @@
-# Try to get the commit hash from 1) git 2) the VERSION file 3) fallback.
-LAST_COMMIT := $(or $(shell git rev-parse --short HEAD 2> /dev/null),$(shell head -n 1 VERSION | grep -oP -m 1 "^[a-z0-9]+$$"), "")
+# Просто захардкодьте версию
+LAST_COMMIT := "manual"
+VERSION := "v0.0.0"
 
-# Try to get the semver from 1) git 2) the VERSION file 3) fallback.
-VERSION := $(or $(LIBREDESK_VERSION),$(shell git describe --tags --abbrev=0 2> /dev/null),$(shell grep -oP 'tag: \Kv\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?' VERSION),"v0.0.0")
-
-BUILDSTR := ${VERSION} (\#${LAST_COMMIT} $(shell date -u +"%Y-%m-%dT%H:%M:%S%z"))
+BUILDSTR := ${VERSION} (\#${LAST_COMMIT})
 
 # Binary names and paths
-BIN := libredesk
+BIN := libredesk.exe
 FRONTEND_DIR := frontend
 FRONTEND_DIST := ${FRONTEND_DIR}/dist
 STATIC := ${FRONTEND_DIST} i18n schema.sql static
@@ -32,26 +30,26 @@ install-deps: $(STUFFBIN)
 .PHONY: frontend-build
 frontend-build: install-deps
 	@echo "→ Building frontend for production - main app & widget..."
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm build:main
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm build:widget
+	@cd ${FRONTEND_DIR} && pnpm build:main
+	@cd ${FRONTEND_DIR} && pnpm build:widget
 
 # Build only the main frontend app.
 .PHONY: frontend-build-main
 frontend-build-main: install-deps
 	@echo "→ Building main frontend app for production..."
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm build:main
+	@cd ${FRONTEND_DIR} && pnpm build:main
 
 # Build only the widget frontend app.
 .PHONY: frontend-build-widget
 frontend-build-widget: install-deps
 	@echo "→ Building widget frontend app for production..."
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm build:widget
+	@cd ${FRONTEND_DIR} && pnpm build:widget
 
 # Run the Go backend server in development mode.
 .PHONY: run-backend
 run-backend:
 	@echo "→ Running backend..."
-	CGO_ENABLED=0 go run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'github.com/abhinavxd/libredesk/internal/version.Version=${VERSION}' -X 'main.frontendDir=frontend/dist'" ./cmd/
+	go run -ldflags="-s -w -X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'github.com/abhinavxd/libredesk/internal/version.Version=${VERSION}' -X 'main.frontendDir=frontend/dist'" ./cmd/
 
 # Run the JS frontend server in development mode (main app only).
 .PHONY: run-frontend
@@ -59,7 +57,7 @@ run-frontend:
 	@echo "→ Installing frontend dependencies (if not already installed)..."
 	@cd ${FRONTEND_DIR} && pnpm install
 	@echo "→ Running main frontend app..."
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm dev:main
+	@cd ${FRONTEND_DIR} && pnpm dev:main
 
 # Run the main frontend app in development mode.
 .PHONY: run-frontend-main
@@ -67,7 +65,7 @@ run-frontend-main:
 	@echo "→ Installing frontend dependencies (if not already installed)..."
 	@cd ${FRONTEND_DIR} && pnpm install
 	@echo "→ Running main frontend app..."
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm dev:main
+	@cd ${FRONTEND_DIR} && pnpm dev:main
 
 # Run the widget frontend app in development mode.
 .PHONY: run-frontend-widget
@@ -75,15 +73,15 @@ run-frontend-widget:
 	@echo "→ Installing frontend dependencies (if not already installed)..."
 	@cd ${FRONTEND_DIR} && pnpm install
 	@echo "→ Running widget frontend app..."
-	@export VITE_APP_VERSION="${VERSION}" && cd ${FRONTEND_DIR} && pnpm dev:widget
+	@cd ${FRONTEND_DIR} && pnpm dev:widget
 
 # Build the backend binary.
 .PHONY: build-backend
 build-backend: $(STUFFBIN)
 	@echo "→ Building backend..."
-	@CGO_ENABLED=0 go build -a \
+	@go build -a \
 		-ldflags="-X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'github.com/abhinavxd/libredesk/internal/version.Version=${VERSION}' -s -w" \
-		-o ${BIN} cmd/*.go
+		-o ./out/${BIN} ./cmd/...
 
 # Main build target: builds both frontend and backend, then stuffs static assets into the binary.
 .PHONY: build
@@ -100,7 +98,7 @@ stuff: $(STUFFBIN)
 .PHONY: demo-build
 demo-build:
 	@echo "→ Building in demo mode..."
-	@export VITE_DEMO_BUILD="true" && $(MAKE) build
+	@$(MAKE) build
 
 # Run tests.
 .PHONY: test
