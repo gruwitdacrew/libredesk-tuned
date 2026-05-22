@@ -1,8 +1,7 @@
 <template>
-  <SmallScreenOverlay v-if="showSmallScreenOverlay" @dismiss="dismissSmallScreen" />
-
-  <div class="flex w-full h-screen text-foreground bg-canvas p-1.5">
-    <!-- Icon sidebar always visible -->
+  <div class="flex w-full h-screen text-foreground bg-canvas p-0 md:p-1.5">
+    <!-- Icon sidebar — desktop only -->
+    <div class="hidden md:flex h-full">
     <SidebarProvider style="--sidebar-width: 3rem" class="w-auto z-50">
       <ShadcnSidebar collapsible="none" class="border rounded-lg overflow-hidden">
         <SidebarContent>
@@ -92,9 +91,10 @@
         </SidebarFooter>
       </ShadcnSidebar>
     </SidebarProvider>
+    </div>
 
     <!-- Main sidebar that collapses -->
-    <div class="flex-1 min-w-0">
+    <div class="flex-1 min-w-0 pb-14 md:pb-0">
       <Sidebar
         :userTeams="userStore.teams"
         :userViews="userViews"
@@ -123,7 +123,10 @@
   <Command />
 
   <!-- Create conversation dialog -->
-  <CreateConversation v-model="openCreateConversationDialog" v-if="openCreateConversationDialog" />
+  <CreateConversation v-model="openCreateConversationDialog" />
+
+  <!-- Mobile bottom navigation bar -->
+  <MobileBottomNav />
 </template>
 
 <script setup>
@@ -156,7 +159,7 @@ import Sidebar from '@main/components/sidebar/Sidebar.vue'
 import Command from '@/features/command/CommandBox.vue'
 import CreateConversation from '@/features/conversation/CreateConversation.vue'
 import { Inbox, Shield, FileLineChart, BookUser } from 'lucide-vue-next'
-import SmallScreenOverlay from '@/components/SmallScreenOverlay.vue'
+import MobileBottomNav from '@/components/navigation/MobileBottomNav.vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import {
@@ -177,13 +180,6 @@ import api from '@main/api'
 
 const route = useRoute()
 const emitter = useEmitter()
-
-// Small screen overlay - shown once per session for screens < 768px.
-const showSmallScreenOverlay = ref(window.screen.width < 768 && !sessionStorage.getItem('smallScreenDismissed'))
-function dismissSmallScreen() {
-  sessionStorage.setItem('smallScreenDismissed', '1')
-  showSmallScreenOverlay.value = false
-}
 
 // Remember last inbox path so navigating back from admin/contacts/reports restores it
 const lastInboxPath = useStorage('lastInboxPath', '')

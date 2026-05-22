@@ -9,7 +9,53 @@
       />
     </div>
 
+    <!-- Mobile: card list (auto-generated from columns) -->
+    <div v-if="isMobile" class="space-y-2">
+      <div v-if="loading" class="flex items-center justify-center py-8">
+        <p class="text-sm text-muted-foreground">{{ t('globals.terms.loading') }}</p>
+      </div>
+      <div v-else-if="!rows.length" class="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+        <Ghost class="h-8 w-8 opacity-50" />
+        <p class="text-sm">{{ emptyText }}</p>
+      </div>
+      <div
+        v-else
+        v-for="row in rows"
+        :key="row.id"
+        class="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm"
+      >
+        <!-- Primary cell (first column) -->
+        <div class="flex flex-col gap-1 min-w-0 flex-1">
+          <div class="text-sm font-medium [&>div]:text-left [&>div]:justify-start [&>a]:text-left truncate">
+            <FlexRender
+              :render="getMobilePrimaryCell(row).column.columnDef.cell"
+              :props="getMobilePrimaryCell(row).getContext()"
+            />
+          </div>
+          <!-- Secondary cells (non-date, non-actions) -->
+          <div v-if="getMobileSecondaryCells(row).length" class="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+            <span
+              v-for="cell in getMobileSecondaryCells(row)"
+              :key="cell.id"
+              class="text-xs text-muted-foreground [&>div]:text-left [&>div]:inline"
+            >
+              <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+            </span>
+          </div>
+        </div>
+        <!-- Actions cell -->
+        <div v-if="getMobileActionsCell(row)" class="flex-shrink-0">
+          <FlexRender
+            :render="getMobileActionsCell(row).column.columnDef.cell"
+            :props="getMobileActionsCell(row).getContext()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop: full table -->
     <div
+      v-else
       ref="scrollContainer"
       class="relative overflow-auto rounded-lg border border-border bg-card shadow-sm"
       :style="{ maxHeight }"
@@ -111,6 +157,7 @@ import {
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { ArrowUpDown, ChevronDown, ChevronUp, Ghost, Search } from 'lucide-vue-next'
 import {
   TableBody,
@@ -120,6 +167,23 @@ import {
   TableRow
 } from '@shared-ui/components/ui/table'
 import { Input } from '@shared-ui/components/ui/input'
+
+// Accessor keys to hide on mobile (date columns)
+const MOBILE_HIDDEN_KEYS = ['created_at', 'updated_at']
+
+const isMobile = useMediaQuery('(max-width: 768px)')
+
+const getMobilePrimaryCell = (row) => row.getVisibleCells()[0]
+
+const getMobileActionsCell = (row) =>
+  row.getVisibleCells().find((c) => c.column.id === 'actions') ?? null
+
+const getMobileSecondaryCells = (row) =>
+  row.getVisibleCells().slice(1).filter(
+    (c) =>
+      c.column.id !== 'actions' &&
+      !MOBILE_HIDDEN_KEYS.includes(c.column.columnDef.accessorKey)
+  )
 
 const { t } = useI18n()
 

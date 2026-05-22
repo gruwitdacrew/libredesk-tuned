@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex flex-col">
+  <div class="h-full flex flex-col">
     <!-- Header -->
     <div class="flex items-center space-x-4 px-2 h-12 border-b shrink-0">
       <SidebarTrigger class="cursor-pointer" />
