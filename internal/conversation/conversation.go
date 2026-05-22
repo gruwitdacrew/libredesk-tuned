@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	authzmodels "github.com/abhinavxd/libredesk/internal/authz/models"
 	"github.com/abhinavxd/libredesk/internal/automation"
 	amodels "github.com/abhinavxd/libredesk/internal/automation/models"
 	"github.com/abhinavxd/libredesk/internal/conversation/models"
@@ -127,6 +128,7 @@ type teamStore interface {
 type userStore interface {
 	Get(int, string, []string) (umodels.User, error)
 	GetAgent(int, string) (umodels.User, error)
+	GetAgentCachedOrLoad(int) (umodels.User, error)
 	GetSystemUser() (umodels.User, error)
 	CreateContact(user *umodels.User) error
 	UpgradeVisitorToContact(visitorID int) error
@@ -141,7 +143,7 @@ type mediaStore interface {
 	SetContentID(id int, contentID string) error
 	GetByModel(id int, model string) ([]mmodels.Media, error)
 	GetByContentIDs(contentIDs []string, conversationUUID string) ([]mmodels.Media, error)
-	ContentIDExists(contentID string) (bool, string, error)
+	ContentIDExists(contentID, conversationUUID string) (bool, string, error)
 	Upload(fileName, contentType string, content io.ReadSeeker) (string, string, error)
 	UploadAndInsert(fileName, contentType, contentID string, modelType null.String, modelID null.Int, content io.ReadSeeker, fileSize int, disposition null.String, meta []byte) (mmodels.Media, error)
 }
@@ -321,9 +323,15 @@ type queries struct {
 	// Broadcast queries.
 	GetActiveLivechatConversationsByAgent *sqlx.Stmt `query:"get-active-livechat-conversations-by-agent"`
 
+<<<<<<< HEAD
 	// Telegram queries.
 	GetLastIncomingMessageMeta          *sqlx.Stmt `query:"get-last-incoming-message-meta"`
 	FindOpenConversationForContactInbox *sqlx.Stmt `query:"find-open-conversation-for-contact-inbox"`
+=======
+	// WS list-subscribe authz.
+	FilterAuthorizedListUUIDs     *sqlx.Stmt `query:"filter-authorized-list-uuids"`
+	GetConversationUUIDsByContact *sqlx.Stmt `query:"get-conversation-uuids-by-contact"`
+>>>>>>> aa972d53e2905c52fdb752be4ba16c6adda00718
 }
 
 // CreateConversation creates a new conversation. If maxConversations > 0, the insert is
@@ -365,6 +373,7 @@ func (c *Manager) CreateConversation(contactID, inboxID int, lastMessage string,
 		c.lo.Error("error inserting new conversation into the DB", "error", err)
 		return 0, "", err
 	}
+	c.BroadcastNewConversation()
 	return id, uuid, nil
 }
 
@@ -1229,10 +1238,7 @@ func (m *Manager) ApplySLA(conversation models.Conversation, policyID int, actor
 	}
 
 	// Record the SLA application as an activity.
-	if err := m.RecordSLASet(conversation.UUID, policy.Name, actor); err != nil {
-		return err
-	}
-	return nil
+	return m.RecordSLASet(conversation.UUID, policy.Name, actor)
 }
 
 // ApplyAction applies an action to a conversation, this can be called from multiple packages across the app to perform actions on conversations.
@@ -1840,4 +1846,32 @@ func (m *Manager) calculateBusinessHoursInfo(conversation models.Conversation) (
 
 func (c *Manager) formatRefMarker(ref string) string {
 	return strings.ReplaceAll(c.subjectRefFormat, "{ref}", ref)
+}
+
+// FilterAuthorizedListUUIDs returns the subset of UUIDs the agent can read, mirroring the conversation read-permission chain.
+func (c *Manager) FilterAuthorizedListUUIDs(agentID int, uuids []string) ([]string, error) {
+	if len(uuids) == 0 {
+		return nil, nil
+	}
+	user, err := c.userStore.GetAgentCachedOrLoad(agentID)
+	if err != nil {
+		return nil, err
+	}
+	var authorized []string
+	err = c.q.FilterAuthorizedListUUIDs.Select(&authorized,
+		pq.Array(uuids),
+		user.ID,
+		pq.Array(user.Teams.IDs()),
+		slices.Contains(user.Permissions, authzmodels.PermConversationsRead),
+		slices.Contains(user.Permissions, authzmodels.PermConversationsReadAll),
+		slices.Contains(user.Permissions, authzmodels.PermConversationsReadAssigned),
+		slices.Contains(user.Permissions, authzmodels.PermConversationsReadTeamAll),
+		slices.Contains(user.Permissions, authzmodels.PermConversationsReadTeamInbox),
+		slices.Contains(user.Permissions, authzmodels.PermConversationsReadUnassigned),
+	)
+	if err != nil {
+		c.lo.Error("error filtering authorized list uuids", "agent_id", agentID, "error", err)
+		return nil, err
+	}
+	return authorized, nil
 }

@@ -594,15 +594,19 @@ func (m *Manager) InsertMessage(message *models.Message) error {
 			lastMessage = "Please rate your experience with us"
 		}
 
-		// If no text content but has media, set last message preview based on media type.
-		if strings.TrimSpace(lastMessage) == "" && len(message.Media) > 0 {
-			lastMessage = m.getMediaPreview(message.Media[0])
+		// HTML2Text drops <img> tags, so image-only messages have empty text. Fall back to a media-type preview.
+		if strings.TrimSpace(lastMessage) == "" {
+			switch {
+			case len(message.Media) > 0:
+				lastMessage = m.getMediaPreview(message.Media[0])
+			case len(inlineUUIDs) > 0:
+				lastMessage = m.i18n.T("globals.terms.image")
+			}
 		}
 
 		// Update conversation last message details (also conditionally updates last_interaction if not activity/private).
 		m.UpdateConversationLastMessage(message.ConversationID, message.ConversationUUID, lastMessage, message.SenderType, message.Type, message.Private, message.CreatedAt, message.SenderID)
 
-		// Broadcast new message with computed preview.
 		m.BroadcastNewMessage(message, lastMessage)
 	}
 
@@ -1150,7 +1154,7 @@ func (m *Manager) uploadMessageAttachments(message *models.Message) error {
 
 		// If the attachment is an image, generate and upload a thumbnail. Log any errors and continue.
 		attachmentExt := strings.TrimPrefix(strings.ToLower(filepath.Ext(attachment.Name)), ".")
-		if slices.Contains(image.Exts, attachmentExt) || image.IsImageByContent(bytes.NewReader(attachment.Content)) {
+		if slices.Contains(image.Exts, attachmentExt) && image.IsImageByContent(bytes.NewReader(attachment.Content)) {
 			if err := m.uploadThumbnailForMedia(media, attachment.Content); err != nil {
 				m.lo.Error("error uploading thumbnail", "error", err)
 			}
@@ -1482,7 +1486,7 @@ func (m *Manager) findExistingMedia(rawContentID, conversationUUID string) (stri
 	if !strings.HasPrefix(rawContentID, "ldsk-") {
 		storedCID = conversationUUID + "_" + rawContentID
 	}
-	exists, mediaUUID, err := m.mediaStore.ContentIDExists(storedCID)
+	exists, mediaUUID, err := m.mediaStore.ContentIDExists(storedCID, conversationUUID)
 	if err != nil {
 		m.lo.Error("error checking media existence by content ID", "content_id", storedCID, "error", err)
 	}
