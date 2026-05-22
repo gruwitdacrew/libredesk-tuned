@@ -114,7 +114,8 @@ const submitTelegramForm = (values) => {
     prompt_tags_on_reply: values.prompt_tags_on_reply ?? false,
     config: {
       bot_token: values.bot_token,
-      bot_name: values.bot_name || ''
+      bot_name: values.bot_name || '',
+      proxy_url: values.proxy_url || ''
     }
   }
 

@@ -11,6 +11,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -28,10 +29,11 @@ const (
 )
 
 type Config struct {
-	BotToken     string `json:"bot_token"`
-	BotName      string `json:"bot_name"`
-	WebhookURL   string `json:"webhook_url"`
+	BotToken      string `json:"bot_token"`
+	BotName       string `json:"bot_name"`
+	WebhookURL    string `json:"webhook_url"`
 	WebhookSecret string `json:"webhook_secret"`
+	ProxyURL      string `json:"proxy_url"`
 }
 
 type Telegram struct {
@@ -50,13 +52,34 @@ type Opts struct {
 }
 
 func New(store inbox.MessageStore, userStore inbox.UserStore, opts Opts) (*Telegram, error) {
+
+	proxyURLRaw := opts.Config.ProxyURL
+	timeout := 30 * time.Second
+
+	var httpClient *http.Client
+
+	if proxyURLRaw != "" {
+		proxyURL, err := url.Parse(proxyURLRaw)
+		if err != nil {
+			return nil, err
+		}
+
+		// Стандартный транспорт поддерживает HTTP/HTTPS прокси
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
+		httpClient = &http.Client{Timeout: timeout, Transport: transport}
+	} else {
+		httpClient = &http.Client{Timeout: timeout}
+	}
+
 	return &Telegram{
 		id:           opts.ID,
 		config:       opts.Config,
 		lo:           opts.Lo,
 		messageStore: store,
 		userStore:    userStore,
-		httpClient:   &http.Client{Timeout: 30 * time.Second},
+		httpClient:   httpClient,
 	}, nil
 }
 

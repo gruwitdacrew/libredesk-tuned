@@ -130,6 +130,8 @@
   "admin.inbox.telegram.name.description": "A friendly name for this inbox",
   "admin.inbox.telegram.webhookUrl": "Webhook URL",
   "admin.inbox.telegram.webhookUrl.description": "Set this URL as your Telegram bot webhook. Use the Telegram Bot API: https://api.telegram.org/bot<token>/setWebhook?url=<webhook_url>",
+  "admin.inbox.telegram.proxyForm.enabled": "Enable proxy settings",
+  "admin.inbox.telegram.proxyForm.enabled.description": "Enable proxy settings (for regions with Telegram blocking)",
   "admin.inbox.csatSurveys": "CSAT Surveys",
   "admin.inbox.csatSurveys.description_1": "Send customer satisfaction surveys when conversation is marked as resolved.",
   "admin.inbox.csatSurveys.description_2": "For better control on when to send surveys, disable this option and create an automation rule to send surveys.",

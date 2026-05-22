@@ -323,15 +323,13 @@ type queries struct {
 	// Broadcast queries.
 	GetActiveLivechatConversationsByAgent *sqlx.Stmt `query:"get-active-livechat-conversations-by-agent"`
 
-<<<<<<< HEAD
 	// Telegram queries.
 	GetLastIncomingMessageMeta          *sqlx.Stmt `query:"get-last-incoming-message-meta"`
 	FindOpenConversationForContactInbox *sqlx.Stmt `query:"find-open-conversation-for-contact-inbox"`
-=======
+
 	// WS list-subscribe authz.
 	FilterAuthorizedListUUIDs     *sqlx.Stmt `query:"filter-authorized-list-uuids"`
 	GetConversationUUIDsByContact *sqlx.Stmt `query:"get-conversation-uuids-by-contact"`
->>>>>>> aa972d53e2905c52fdb752be4ba16c6adda00718
 }
 
 // CreateConversation creates a new conversation. If maxConversations > 0, the insert is

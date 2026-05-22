@@ -85,6 +85,37 @@
       </p>
     </div>
 
+    <SwitchField
+      :title="$t('admin.inbox.telegram.proxyForm.enabled')"
+      :description="$t('admin.inbox.telegram.proxyForm.enabled.description')"
+      :checked="showProxyField"
+      @update:checked="(val) => {
+        showProxyField = val
+        if (!val) form.setFieldValue('proxy_url', '')
+      }"
+    />
+
+    <!-- Form Configuration -->
+    <div v-if="showProxyField" class="space-y-6">
+      <FormField v-slot="{ componentField }" name="proxy_url">
+        <FormItem>
+          <FormLabel>Proxy URL</FormLabel>
+          <FormControl>
+            <Input 
+              type="text" 
+              placeholder="http://user:pass@host:8080" 
+              v-bind="componentField"
+              :disabled="!showProxyField"
+            />
+          </FormControl>
+          <FormDescription>
+            Supported: HTTPS with authentication (user:pass@host:port)
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
+      </FormField>
+    </div>
+
     <Button type="submit" :disabled="isLoading">
       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
       {{ isNewForm ? $t('globals.messages.create') : $t('globals.messages.save') }}
@@ -93,7 +124,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
@@ -140,6 +171,7 @@ const formSchema = toTypedSchema(
     name: z.string().min(1, t('globals.messages.required')),
     bot_token: z.string().min(1, t('globals.messages.required')),
     bot_name: z.string().optional().default(''),
+    proxy_url: z.string().optional().default(''),
     enabled: z.boolean().default(true),
     csat_enabled: z.boolean().default(false),
     prompt_tags_on_reply: z.boolean().default(false)
@@ -152,11 +184,14 @@ const form = useForm({
     name: props.initialValues?.name || '',
     bot_token: props.initialValues?.config?.bot_token || '',
     bot_name: props.initialValues?.config?.bot_name || '',
+    proxy_url: props.initialValues?.config?.proxy_url ?? '',
     enabled: props.initialValues?.enabled ?? true,
     csat_enabled: props.initialValues?.csat_enabled ?? false,
     prompt_tags_on_reply: props.initialValues?.prompt_tags_on_reply ?? false
   }
 })
+
+const showProxyField = ref(!!form.values.proxy_url?.trim())
 
 const webhookUrl = computed(() => {
   if (props.initialValues?.id) {
