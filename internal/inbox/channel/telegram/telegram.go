@@ -3,6 +3,9 @@ package telegram
 import (
 	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,9 +28,10 @@ const (
 )
 
 type Config struct {
-	BotToken   string `json:"bot_token"`
-	BotName    string `json:"bot_name"`
-	WebhookURL string `json:"webhook_url"`
+	BotToken     string `json:"bot_token"`
+	BotName      string `json:"bot_name"`
+	WebhookURL   string `json:"webhook_url"`
+	WebhookSecret string `json:"webhook_secret"`
 }
 
 type Telegram struct {
@@ -65,10 +69,6 @@ func (t *Telegram) Receive(ctx context.Context) error {
 }
 
 func (t *Telegram) Send(message models.OutboundMessage) error {
-	if message.MessageReceiverID <= 0 {
-		return nil
-	}
-
 	chatID := t.extractChatID(message.Meta)
 	if chatID == "" {
 		return fmt.Errorf("telegram chat_id not found in message meta for message %s", message.UUID)
@@ -80,6 +80,7 @@ func (t *Telegram) Send(message models.OutboundMessage) error {
 	}
 
 	if len(message.Attachments) > 0 {
+		var lastErr error
 		for i, att := range message.Attachments {
 			caption := ""
 			if i == 0 {
@@ -87,9 +88,10 @@ func (t *Telegram) Send(message models.OutboundMessage) error {
 			}
 			if err := t.sendAttachment(chatID, att, caption); err != nil {
 				t.lo.Error("error sending telegram attachment", "error", err, "attachment", att.Name)
+				lastErr = err
 			}
 		}
-		return nil
+		return lastErr
 	}
 
 	if content != "" {
@@ -117,9 +119,32 @@ func (t *Telegram) Channel() string {
 	return ChannelTelegram
 }
 
+// WebhookSecret returns the secret used to verify incoming webhook requests.
+func (t *Telegram) WebhookSecret() string {
+	if t.config.WebhookSecret != "" {
+		return t.config.WebhookSecret
+	}
+	// Derive a secret from bot token using HMAC-SHA256.
+	h := hmac.New(sha256.New, []byte("libredesk-telegram-webhook"))
+	h.Write([]byte(t.config.BotToken))
+	return hex.EncodeToString(h.Sum(nil))[:32]
+}
+
+// VerifyWebhook checks the X-Telegram-Bot-Api-Secret-Token header.
+// If the header is empty, verification is skipped (webhook was set without secret_token).
+func (t *Telegram) VerifyWebhook(secretToken string) bool {
+	if secretToken == "" {
+		return true
+	}
+	return secretToken == t.WebhookSecret()
+}
+
 func (t *Telegram) SetWebhook(url string) error {
 	apiURL := fmt.Sprintf("%s%s/setWebhook", telegramAPIBase, t.config.BotToken)
-	payload, _ := json.Marshal(map[string]string{"url": url})
+	payload, _ := json.Marshal(map[string]string{
+		"url":          url,
+		"secret_token": t.WebhookSecret(),
+	})
 
 	resp, err := t.httpClient.Post(apiURL, "application/json", bytes.NewReader(payload))
 	if err != nil {
@@ -140,11 +165,18 @@ func (t *Telegram) ProcessWebhookUpdate(update Update) error {
 		return nil
 	}
 
+	if msg.From == nil || msg.Chat == nil {
+		return nil
+	}
+
+	// Use a synthetic email to identify the Telegram contact instead of external_user_id.
+	// Format: {telegram_user_id}@telegram
+	telegramEmail := fmt.Sprintf("%d@telegram", msg.From.ID)
+
 	contact := models.IncomingContact{
-		FirstName:      msg.From.FirstName,
-		LastName:       msg.From.LastName,
-		Email:          null.String{},
-		ExternalUserID: null.StringFrom(fmt.Sprintf("telegram_%d", msg.From.ID)),
+		FirstName: msg.From.FirstName,
+		LastName:  msg.From.LastName,
+		Email:     null.StringFrom(telegramEmail),
 	}
 
 	if avatarBytes, mime := t.downloadUserAvatar(msg.From.ID); len(avatarBytes) > 0 {
@@ -262,10 +294,25 @@ func (t *Telegram) extractAttachments(msg *Message) []attachment.Attachment {
 	}
 
 	if msg.Sticker != nil {
-		if att, err := t.downloadFile(msg.Sticker.FileID, "sticker.webp", "image/webp"); err == nil {
-			attachments = append(attachments, att)
+		// For animated (.tgs) or video (.webm) stickers, use the thumbnail if available.
+		// Static stickers (.webp) can be downloaded directly.
+		if msg.Sticker.IsAnimated || msg.Sticker.IsVideo {
+			if msg.Sticker.Thumbnail != nil {
+				if att, err := t.downloadFile(msg.Sticker.Thumbnail.FileID, "sticker.jpg", "image/jpeg"); err == nil {
+					attachments = append(attachments, att)
+				} else {
+					t.lo.Error("error downloading telegram sticker thumbnail", "error", err)
+				}
+			} else {
+				// No thumbnail available, set emoji as content placeholder.
+				// The message content will show the emoji.
+			}
 		} else {
-			t.lo.Error("error downloading telegram sticker", "error", err)
+			if att, err := t.downloadFile(msg.Sticker.FileID, "sticker.webp", "image/webp"); err == nil {
+				attachments = append(attachments, att)
+			} else {
+				t.lo.Error("error downloading telegram sticker", "error", err)
+			}
 		}
 	}
 
