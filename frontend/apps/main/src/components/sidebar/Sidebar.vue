@@ -102,6 +102,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@main/stores/user'
 import { useConversationStore } from '@main/stores/conversation'
+import SwipeWrapper from '@main/components/layout/SwipeWrapper.vue'
 
 defineProps({
   userTeams: { type: Array, default: () => [] },
@@ -241,6 +242,10 @@ const viewToDelete = ref(null)
     :default-open="sidebarOpen"
     v-on:update:open="sidebarOpen = $event"
   >
+    <!-- Swipe gesture handler — должен быть прямым дочерним элементом SidebarProvider,
+         чтобы useSidebar()/inject() нашёл контекст -->
+    <SwipeWrapper />
+
     <!-- Contacts sidebar -->
     <template
       v-if="route.matched.some((record) => record.name && record.name.startsWith('contact'))"

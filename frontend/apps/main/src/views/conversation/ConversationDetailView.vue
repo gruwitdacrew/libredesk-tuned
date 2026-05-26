@@ -1,7 +1,13 @@
 <template>
   <div class="relative h-full">
+    <!-- Mobile: только область сообщений, без боковой панели -->
+    <div v-if="isMobile && showContent" class="h-full">
+      <Conversation />
+    </div>
+
+    <!-- Desktop: resizable-панели с боковым сайдбаром -->
     <ResizablePanelGroup
-      v-if="showContent"
+      v-else-if="!isMobile && showContent"
       direction="horizontal"
       class="h-full"
       @layout="onLayoutChange"
@@ -17,7 +23,7 @@
       <!-- Sidebar Panel (collapsible) -->
       <ResizablePanel
         ref="sidebarPanelRef"
-:default-size="panelSizes[1]"
+        :default-size="panelSizes[1]"
         :min-size="15"
         :max-size="40"
         :collapsible="true"
@@ -31,9 +37,9 @@
       </ResizablePanel>
     </ResizablePanelGroup>
 
-    <!-- Toggle button when sidebar is collapsed -->
+    <!-- Toggle button when sidebar is collapsed (desktop only) -->
     <button
-      v-if="showContent && !sidebarOpen"
+      v-if="!isMobile && showContent && !sidebarOpen"
       @click="toggleSidebar"
       class="absolute right-0 top-16 p-2 rounded-l-full bg-sidebar text-sidebar-foreground hover:bg-opacity-90 transition-all duration-200 border shadow hover:scale-105 z-50"
     >
@@ -44,7 +50,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useStorage, useDocumentVisibility } from '@vueuse/core'
+import { useStorage, useDocumentVisibility, useMediaQuery } from '@vueuse/core'
 import { ChevronLeft } from 'lucide-vue-next'
 import { useConversationStore } from '@main/stores/conversation'
 import { useEmitter } from '@main/composables/useEmitter'
@@ -59,6 +65,7 @@ const props = defineProps({
 
 const conversationStore = useConversationStore()
 const emitter = useEmitter()
+const isMobile = useMediaQuery('(max-width: 768px)')
 const sidebarPanelRef = ref(null)
 const sidebarOpen = useStorage('conversationSidebarOpen', true)
 const panelSizes = useStorage('conversationDetailPanelSizes', [70, 30])
