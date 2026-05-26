@@ -102,6 +102,7 @@ import { getTextFromHTML } from '@shared-ui/utils/string'
 import { useI18n } from 'vue-i18n'
 import Editor from '@main/components/editor/TextEditor.vue'
 import SelectComboBox from '@main/components/combobox/SelectCombobox.vue'
+import Input from '@shared-ui/components/ui/input/Input.vue'
 
 const props = defineProps({
   actions: {

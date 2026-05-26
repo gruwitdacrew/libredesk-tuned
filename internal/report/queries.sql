@@ -252,9 +252,9 @@ SELECT
 SELECT
     json_build_object(
         'average_rating',
-        COALESCE(AVG(rating) FILTER (WHERE rating > 0), 0),
+        COALESCE(AVG(rating), 0),
         'total_responses',
-        COUNT(*) FILTER (WHERE rating > 0),
+        COUNT(*),
         'total_sent',
         COUNT(*),
         'response_rate',

@@ -21,6 +21,7 @@
   "actions.removeTags": "Remove tags",
   "actions.sendCsat": "Send CSAT",
   "actions.sendReply": "Send reply",
+  "actions.sendAiReply": "Send AI reply",
   "actions.setPriority": "Set priority",
   "actions.setSla": "Set SLA",
   "actions.setStatus": "Set status",

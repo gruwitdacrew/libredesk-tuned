@@ -228,6 +228,11 @@ export function useConversationFilters () {
             label: t('actions.sendReply'),
             type: FIELD_TYPE.RICHTEXT
         },
+        send_ai_reply: {
+            label: t('actions.sendAiReply'),
+            type: FIELD_TYPE.SELECT,
+            options: cStore.statusOptionsNoSnooze
+        },
         send_csat: {
             label: t('actions.sendCsat'),
         },

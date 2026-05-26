@@ -777,7 +777,6 @@ func handleCreateConversation(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 
-	to := []string{req.Email}
 	user, err := app.user.GetAgentCachedOrLoad(auser.ID)
 	if err != nil {
 		return sendErrorEnvelope(r, err)
@@ -821,17 +820,21 @@ func handleCreateConversation(r *fastglue.Request) error {
 	// Send initial message based on the initiator of conversation.
 	switch req.Initiator {
 	case umodels.UserTypeAgent:
+
+		conversation, err := app.conversation.GetConversation(0, conversationUUID, "")
+
+		// Trigger webhook for agent-initiated conversation, for contact intitiated the incoming message hooks handle it.
+		if err == nil {
+			app.webhook.TriggerEvent(wmodels.EventConversationCreated, conversation)
+		}
+
 		// Queue reply.
-		if _, err := app.conversation.QueueReply(media, req.InboxID, auser.ID /**sender_id**/, contact.ID, conversationUUID, req.Content, to, nil /**cc**/, nil /**bcc**/, map[string]any{} /**meta**/); err != nil {
+		if _, err := app.conversation.QueueReply(media, req.InboxID, auser.ID /**sender_id**/, contact.ID, &conversation, req.Content, map[string]any{} /**meta**/); err != nil {
 			// Delete the conversation if msg queue fails.
 			if err := app.conversation.DeleteConversation(conversationUUID); err != nil {
 				app.lo.Error("error deleting conversation", "error", err)
 			}
 			return sendErrorEnvelope(r, envelope.NewError(envelope.GeneralError, app.i18n.T("globals.messages.errorSendingMessage"), nil))
-		}
-		// Trigger webhook for agent-initiated conversation, for contact intitiated the incoming message hooks handle it.
-		if c, err := app.conversation.GetConversation(0, conversationUUID, ""); err == nil {
-			app.webhook.TriggerEvent(wmodels.EventConversationCreated, c)
 		}
 	case umodels.UserTypeContact:
 		// Create contact message.

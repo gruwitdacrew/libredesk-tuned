@@ -2,6 +2,7 @@
 package conversation
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"embed"
@@ -9,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -86,6 +88,7 @@ type Manager struct {
 	wg                         sync.WaitGroup
 	continuityConfig           ContinuityConfig
 	subjectRefFormat           string
+	httpClient                 *http.Client
 }
 
 // WidgetConversationView represents the conversation data for widget clients
@@ -103,6 +106,77 @@ type WidgetConversationResponse struct {
 	Messages              []models.ChatMessage    `json:"messages"`
 	BusinessHoursID       *int                    `json:"business_hours_id,omitempty"`
 	WorkingHoursUTCOffset *int                    `json:"working_hours_utc_offset,omitempty"`
+}
+
+// MLResponse представляет ответ от ML-модели
+type MLResponse struct {
+	Answer        string       `json:"answer"`
+	Sources       []Source     `json:"sources"`   // ← массив объектов
+	Citations     []Citation   `json:"citations"` // ← массив объектов
+	Confidence    string       `json:"confidence"`
+	RefusalReason *string      `json:"refusal_reason"`
+	Route         string       `json:"route"`
+	RequestID     string       `json:"request_id"`
+	QueryRewrite  QueryRewrite `json:"query_rewrite"`
+	Metadata      MLMetadata   `json:"metadata"`
+}
+
+// Source представляет источник информации
+type Source struct {
+	ID              string      `json:"id"`
+	DocID           string      `json:"doc_id"`
+	SourceName      string      `json:"source_name"`
+	Title           *string     `json:"title"`
+	URL             *string     `json:"url"`
+	ChunkID         *string     `json:"chunk_id"`
+	LineStart       int         `json:"line_start"`
+	LineEnd         int         `json:"line_end"`
+	Snippet         string      `json:"snippet"`
+	Quote           string      `json:"quote"`
+	Score           *float64    `json:"score"`
+	RetrievalMethod string      `json:"retrieval_method"`
+	Metadata        MetadataObj `json:"metadata"`
+}
+
+// Citation представляет цитату
+type Citation struct {
+	SourceID string  `json:"source_id"`
+	TextSpan string  `json:"text_span"`
+	ChunkID  *string `json:"chunk_id"`
+}
+
+// QueryRewrite содержит информацию о переписанном запросе
+type QueryRewrite struct {
+	StandaloneQuery string `json:"standalone_query"`
+	UsedHistory     bool   `json:"used_history"`
+	Reason          string `json:"reason"`
+}
+
+// MLMetadata содержит метаинформацию о запросе
+type MLMetadata struct {
+	Route        string  `json:"route"`
+	Model        string  `json:"model"`
+	Provider     string  `json:"provider"`
+	LatencyMs    float64 `json:"latency_ms"`
+	FallbackUsed bool    `json:"fallback_used"`
+}
+
+// MetadataObj для дополнительных метаданных
+type MetadataObj map[string]interface{}
+
+// IsSuccessful возвращает true, если модель успешно ответила
+func (r *MLResponse) IsSuccessful() bool {
+	return r.RefusalReason == nil && r.Confidence != "low"
+}
+
+// IsRefusal возвращает true, если модель отказалась отвечать
+func (r *MLResponse) IsRefusal() bool {
+	return r.RefusalReason != nil
+}
+
+// ShouldEscalate возвращает true, если нужна эскалация оператору
+func (r *MLResponse) ShouldEscalate() bool {
+	return r.RefusalReason != nil || r.Confidence == "low"
 }
 
 type slaStore interface {
@@ -183,6 +257,7 @@ type Opts struct {
 	IncomingMessageQueueSize int
 	ContinuityConfig         *ContinuityConfig
 	SubjectRefFormat         string
+	Timeout                  time.Duration
 }
 
 // New initializes a new conversation Manager.
@@ -252,6 +327,9 @@ func New(
 		outgoingProcessingMessages: sync.Map{},
 		continuityConfig:           continuityConfig,
 		subjectRefFormat:           subjectRefFormat,
+		httpClient: &http.Client{
+			Timeout: opts.Timeout,
+		},
 	}
 
 	return c, nil
@@ -1295,19 +1373,55 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 	case amodels.ActionReply:
 		// Automated replies always go to the contact only. CCs from the
 		// conversation history are deliberately not carried forward.
-		if conv.Contact.Email.String == "" {
-			return fmt.Errorf("auto-reply skipped: contact has no email for conversation: %s", conv.UUID)
-		}
 		_, err := m.QueueReply(
 			[]mmodels.Media{},
 			conv.InboxID,
 			user.ID,
 			conv.ContactID,
-			conv.UUID,
+			&conv,
 			action.Value[0],
-			[]string{conv.Contact.Email.String},
-			nil,
-			nil,
+			map[string]any{"is_automated": true},
+		)
+		if err != nil {
+			return fmt.Errorf("sending reply: %w", err)
+		}
+	case amodels.ActionAiReply:
+		// Get AI model response through http
+		payload, _ := json.Marshal(map[string]string{
+			"question":   conv.LastMessage.String,
+			"session_id": conv.UUID,
+		})
+
+		response, err := m.httpClient.Post("http://localhost:5015/ask", "application/json", bytes.NewReader(payload))
+		if err != nil {
+			return fmt.Errorf("getting ai reply: %w", err)
+		}
+		defer response.Body.Close()
+
+		var result MLResponse
+
+		if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+			return fmt.Errorf("getting ai reply: %w", err)
+		}
+
+		if result.ShouldEscalate() {
+			statusID, err := strconv.Atoi(action.Value[0])
+			if err != nil {
+				return fmt.Errorf("invalid status ID %q: %w", action.Value[0], err)
+			}
+
+			err = m.UpdateConversationStatus(conv.UUID, statusID, "", "", user)
+		}
+
+		// Automated ai replies always go to the contact only. CCs from the
+		// conversation history are deliberately not carried forward.
+		_, err = m.QueueReply(
+			[]mmodels.Media{},
+			conv.InboxID,
+			user.ID,
+			conv.ContactID,
+			&conv,
+			result.Answer,
 			map[string]any{"is_automated": true},
 		)
 		if err != nil {
@@ -1369,10 +1483,6 @@ func (m *Manager) RemoveConversationAssignee(uuid, typ string, actor umodels.Use
 
 // SendCSATReply sends a CSAT reply message to a conversation. No-op if one was already sent or contact has no email.
 func (m *Manager) SendCSATReply(actorUserID int, conversation models.Conversation) error {
-	if conversation.Contact.Email.String == "" {
-		m.lo.Info("CSAT reply skipped: contact has no email for conversation: %s", "conversation_uuid", conversation.UUID)
-		return nil
-	}
 	csatResp, err := m.csatStore.Create(conversation.ID)
 	if err != nil {
 		if errors.Is(err, csat.ErrCSATAlreadyExists) {
@@ -1407,7 +1517,7 @@ func (m *Manager) SendCSATReply(actorUserID int, conversation models.Conversatio
 	}
 
 	// Only send CSAT to contact.
-	_, err = m.QueueReply(nil /**media**/, conversation.InboxID, actorUserID, conversation.ContactID, conversation.UUID, message, []string{conversation.Contact.Email.String}, nil, nil, meta)
+	_, err = m.QueueReply(nil /**media**/, conversation.InboxID, actorUserID, conversation.ContactID, &conversation, message, meta)
 	if err != nil {
 		m.lo.Error("error sending CSAT reply", "conversation_uuid", conversation.UUID, "error", err)
 		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)

@@ -15,6 +15,7 @@ const (
 	ActionSetPriority     = "set_priority"
 	ActionSendPrivateNote = "send_private_note"
 	ActionReply           = "send_reply"
+	ActionAiReply         = "send_ai_reply"
 	ActionSetSLA          = "set_sla"
 	ActionAddTags         = "add_tags"
 	ActionSetTags         = "set_tags"
@@ -60,8 +61,8 @@ const (
 	ExecutionModeAll        = "all"
 	ExecutionModeFirstMatch = "first_match"
 
-	FieldTypeContactCustomAttribute      = "contact_custom_attribute"
-	FieldTypeConversationField           = "conversation"
+	FieldTypeContactCustomAttribute = "contact_custom_attribute"
+	FieldTypeConversationField      = "conversation"
 )
 
 // ActionPermissions maps actions to permissions

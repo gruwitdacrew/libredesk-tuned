@@ -458,7 +458,7 @@ func (m *Manager) CreateContactMessage(media []mmodels.Media, contactID int, con
 }
 
 // QueueReply queues a reply message in a conversation.
-func (m *Manager) QueueReply(media []mmodels.Media, inboxID, senderID, contactID int, conversationUUID, content string, to, cc, bcc []string, metaMap map[string]interface{}) (models.Message, error) {
+func (m *Manager) QueueReply(media []mmodels.Media, inboxID, senderID, contactID int, conversation *models.Conversation, content string, metaMap map[string]interface{}) (models.Message, error) {
 	var (
 		message = models.Message{}
 	)
@@ -473,21 +473,14 @@ func (m *Manager) QueueReply(media []mmodels.Media, inboxID, senderID, contactID
 		return models.Message{}, envelope.NewError(envelope.InputError, m.i18n.T("status.disabledInbox"), nil)
 	}
 
+	conversationUUID := conversation.UUID
+
 	var sourceID string
 	switch inboxRecord.Channel {
 	case inbox.ChannelEmail:
-		// Add `to`, `cc`, and `bcc` recipients to meta map.
-		to = stringutil.RemoveEmpty(to)
-		cc = stringutil.RemoveEmpty(cc)
-		bcc = stringutil.RemoveEmpty(bcc)
+		to := stringutil.RemoveEmpty([]string{conversation.Contact.Email.String})
 		if len(to) > 0 {
 			metaMap["to"] = to
-		}
-		if len(cc) > 0 {
-			metaMap["cc"] = cc
-		}
-		if len(bcc) > 0 {
-			metaMap["bcc"] = bcc
 		}
 		if len(to) == 0 {
 			return message, envelope.NewError(envelope.GeneralError, m.i18n.Ts("globals.messages.empty", "name", "`to`"), nil)
@@ -1390,6 +1383,7 @@ func (m *Manager) ProcessIncomingMessageHooks(conversationUUID string, isNewConv
 		if err == nil {
 			m.webhookStore.TriggerEvent(wmodels.EventConversationCreated, conversation)
 			m.automation.EvaluateNewConversationRules(conversation)
+			m.automation.EvaluateConversationUpdateRules(conversation, amodels.EventConversationMessageIncoming)
 		}
 		return nil
 	}
