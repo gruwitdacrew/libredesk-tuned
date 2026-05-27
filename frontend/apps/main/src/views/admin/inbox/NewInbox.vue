@@ -65,9 +65,11 @@ import { EMITTER_EVENTS } from '../../../constants/emitterEvents.js'
 import { useEmitter } from '../../../composables/useEmitter'
 import { handleHTTPError } from '@shared-ui/utils/http.js'
 import { useI18n } from 'vue-i18n'
+import { useInboxStore } from '@main/stores/inbox'
 
 const { t } = useI18n()
 const emitter = useEmitter()
+const inboxStore = useInboxStore()
 const isLoading = ref(false)
 const availableLanguages = ref([])
 const currentStep = ref(1)
@@ -183,6 +185,8 @@ async function createInbox(payload) {
   try {
     isLoading.value = true
     await api.createInbox(payload)
+    // Обновляем стор сразу, чтобы приветственный экран пропал
+    await inboxStore.fetchInboxes(true)
     emitter.emit(EMITTER_EVENTS.SHOW_TOAST, {
       description: t('globals.messages.savedSuccessfully')
     })
