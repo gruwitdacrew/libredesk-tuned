@@ -1418,7 +1418,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 				accessCode := generateAccessCode()
 
 				// Отправляем сообщение с кодом
-				message = fmt.Sprintf("%s<br><br>Код обращения: %s", message, accessCode)
+				message = fmt.Sprintf("%s\n\nКод обращения: %s", message, accessCode)
 
 				err = m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
 				if err != nil {
@@ -1426,7 +1426,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 				}
 			} else if msg_type == "msg_escalation_2" {
 
-				message = fmt.Sprintf("%s<br><br>Выберите канал связи:", message)
+				message = fmt.Sprintf("%s\n\nВыберите канал связи:", message)
 
 				statusID, err := strconv.Atoi(action.Value[0])
 				if err != nil {
