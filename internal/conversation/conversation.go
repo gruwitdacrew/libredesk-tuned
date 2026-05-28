@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"slices"
 	"strconv"
@@ -1404,13 +1405,36 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			return fmt.Errorf("getting ai reply: %w", err)
 		}
 
+		message := result.Answer
+		msg_type := "msg_plain"
 		if result.ShouldEscalate() {
-			statusID, err := strconv.Atoi(action.Value[0])
-			if err != nil {
-				return fmt.Errorf("invalid status ID %q: %w", action.Value[0], err)
+			if rand.Intn(2) == 0 {
+				msg_type = "msg_escalation_1"
+			} else {
+				msg_type = "msg_escalation_2"
 			}
+			if msg_type == "msg_escalation_1" {
+				// Генерируем код обращения (6 цифр)
+				accessCode := generateAccessCode()
 
-			err = m.UpdateConversationStatus(conv.UUID, statusID, "", "", user)
+				// Отправляем сообщение с кодом
+				message = fmt.Sprintf("%s<br><br>Код обращения: %s", message, accessCode)
+
+				err = m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
+				if err != nil {
+					return fmt.Errorf("updating conversation status: %w", err)
+				}
+			} else if msg_type == "msg_escalation_2" {
+
+				message = fmt.Sprintf("%s<br><br>Выберите канал связи:", message)
+
+				statusID, err := strconv.Atoi(action.Value[0])
+				if err != nil {
+					return fmt.Errorf("invalid status ID %q: %w", action.Value[0], err)
+				}
+
+				err = m.UpdateConversationStatus(conv.UUID, statusID, "", "", user)
+			}
 		}
 
 		// Automated ai replies always go to the contact only. CCs from the
@@ -1421,8 +1445,8 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			user.ID,
 			conv.ContactID,
 			&conv,
-			result.Answer,
-			map[string]any{"is_automated": true},
+			message,
+			map[string]any{"is_automated": true, "msg_type": msg_type},
 		)
 		if err != nil {
 			return fmt.Errorf("sending reply: %w", err)
@@ -1441,6 +1465,15 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 		return fmt.Errorf("unknown action: %s", action.Type)
 	}
 	return nil
+}
+
+// Генерация кода с math/rand
+func generateAccessCode() string {
+	code := make([]byte, 6)
+	for i := range code {
+		code[i] = byte('0' + rand.Intn(10))
+	}
+	return string(code)
 }
 
 // RemoveConversationAssignee removes assigned user from a conversation.

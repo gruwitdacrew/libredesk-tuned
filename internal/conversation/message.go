@@ -1373,6 +1373,13 @@ func (m *Manager) uploadThumbnailForMedia(media mmodels.Media, content []byte) e
 // for incoming messages. This allows other channels to insert messages first and then call this
 // function to trigger the necessary hooks.
 func (m *Manager) ProcessIncomingMessageHooks(conversationUUID string, isNewConversation bool) error {
+
+	conversation, err := m.GetConversation(0, conversationUUID, "")
+	if err != nil {
+		m.lo.Error("error fetching conversation for incoming message hooks", "conversation_uuid", conversationUUID, "error", err)
+		return nil
+	}
+
 	// Start waiting since clock, cleared when agent replies.
 	now := time.Now()
 	m.UpdateConversationWaitingSince(conversationUUID, &now)
@@ -1392,7 +1399,7 @@ func (m *Manager) ProcessIncomingMessageHooks(conversationUUID string, isNewConv
 	systemUser, err := m.userStore.GetSystemUser()
 	if err != nil {
 		m.lo.Error("error fetching system user", "error", err)
-	} else {
+	} else if conversation.Status.String == models.StatusResolved {
 		if err := m.ReOpenConversation(conversationUUID, systemUser); err != nil {
 			m.lo.Error("error reopening conversation", "error", err)
 		}
@@ -1400,26 +1407,22 @@ func (m *Manager) ProcessIncomingMessageHooks(conversationUUID string, isNewConv
 
 	// Create SLA event for next response if a SLA is applied and has next response time set, subsequent agent replies will mark this event as met.
 	// This cycle continues for next response time SLA metric.
-	conversation, err := m.GetConversation(0, conversationUUID, "")
-	if err != nil {
-		m.lo.Error("error fetching conversation for incoming message hooks", "conversation_uuid", conversationUUID, "error", err)
-	} else {
-		// Trigger automations on incoming message event.
-		m.automation.EvaluateConversationUpdateRules(conversation, amodels.EventConversationMessageIncoming)
 
-		if conversation.SLAPolicyID.Int == 0 {
-			m.lo.Info("no SLA policy applied to conversation, skipping next response SLA event creation")
-			return nil
-		}
-		if deadline, err := m.slaStore.CreateNextResponseSLAEvent(conversation.ID, conversation.AppliedSLAID.Int, conversation.SLAPolicyID.Int, conversation.AssignedTeamID.Int); err != nil && !errors.Is(err, sla.ErrUnmetSLAEventAlreadyExists) {
-			m.lo.Error("error creating next response SLA event", "conversation_id", conversation.ID, "error", err)
-		} else if !deadline.IsZero() {
-			m.lo.Info("next response SLA event created for conversation", "conversation_id", conversation.ID, "deadline", deadline, "sla_policy_id", conversation.SLAPolicyID.Int)
-			m.BroadcastConversationUpdate(conversationUUID, map[string]any{
-				"next_response_deadline_at": deadline.Format(time.RFC3339),
-				"next_response_met_at":      nil,
-			})
-		}
+	// Trigger automations on incoming message event.
+	m.automation.EvaluateConversationUpdateRules(conversation, amodels.EventConversationMessageIncoming)
+
+	if conversation.SLAPolicyID.Int == 0 {
+		m.lo.Info("no SLA policy applied to conversation, skipping next response SLA event creation")
+		return nil
+	}
+	if deadline, err := m.slaStore.CreateNextResponseSLAEvent(conversation.ID, conversation.AppliedSLAID.Int, conversation.SLAPolicyID.Int, conversation.AssignedTeamID.Int); err != nil && !errors.Is(err, sla.ErrUnmetSLAEventAlreadyExists) {
+		m.lo.Error("error creating next response SLA event", "conversation_id", conversation.ID, "error", err)
+	} else if !deadline.IsZero() {
+		m.lo.Info("next response SLA event created for conversation", "conversation_id", conversation.ID, "deadline", deadline, "sla_policy_id", conversation.SLAPolicyID.Int)
+		m.BroadcastConversationUpdate(conversationUUID, map[string]any{
+			"next_response_deadline_at": deadline.Format(time.RFC3339),
+			"next_response_met_at":      nil,
+		})
 	}
 	return nil
 }
