@@ -4,12 +4,24 @@
  * Должен быть размещён ВНУТРИ <SidebarProvider> (не как slot-контент),
  * иначе inject() от useSidebar() не найдёт контекст.
  */
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useSidebar } from '@shared-ui/components/ui/sidebar'
 import { useMediaQuery } from '@vueuse/core'
+import { useRoute } from 'vue-router'
 
 const { openMobile, setOpenMobile } = useSidebar()
 const isMobile = useMediaQuery('(max-width: 768px)')
+const route = useRoute()
+
+// Закрывать сайдбар при навигации (клик по кнопке в сайдбаре)
+watch(
+  () => route.path,
+  () => {
+    if (openMobile.value) {
+      setOpenMobile(false)
+    }
+  }
+)
 
 // px от левого края — зона начала жеста открытия
 const EDGE_THRESHOLD = 32

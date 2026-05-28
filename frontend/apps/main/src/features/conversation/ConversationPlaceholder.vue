@@ -76,7 +76,8 @@ onMounted(async () => {
 
 const hasInboxes = computed(() => inboxStore.inboxes.length > 0)
 const hasAgents = computed(() => usersStore.users.length > 0)
-const showGettingStarted = computed(() => !hasInboxes.value || !hasAgents.value)
+// Показываем checklist только пока не создан первый инбокс
+const showGettingStarted = computed(() => !hasInboxes.value)
 </script>
 
 <style scoped>

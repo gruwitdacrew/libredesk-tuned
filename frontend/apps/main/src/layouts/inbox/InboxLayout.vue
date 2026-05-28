@@ -1,15 +1,23 @@
 <template>
   <!-- Mobile: одна панель — setup / список / разговор -->
   <div v-if="isMobile" class="h-full w-full">
+    <!--
+      router-view рендерится ВСЕГДА (даже когда показывается список),
+      чтобы InboxView.vue монтировался и запускал fetchConversationsList.
+      Визуально скрываем его через "hidden" когда показываем список или setup-экран.
+    -->
+    <div :class="(isSearchRoute || isConversationOpen) ? 'h-full' : 'hidden'">
+      <router-view v-slot="{ Component }">
+        <component :is="Component" />
+      </router-view>
+    </div>
+
+    <!-- Список или setup-экран когда разговор не открыт -->
     <template v-if="!isSearchRoute && !isConversationOpen">
-      <!-- ConversationPlaceholder сам показывает спиннер пока грузит данные -->
       <!-- needsSetup реактивен: как только store заполнится — переключится на список -->
       <ConversationPlaceholder v-if="needsSetup" />
       <ConversationList v-else />
     </template>
-    <router-view v-else v-slot="{ Component }">
-      <component :is="Component" />
-    </router-view>
   </div>
 
   <!-- Desktop: две resizable-панели -->
@@ -46,7 +54,6 @@ import { useStorage, useMediaQuery } from '@vueuse/core'
 import ConversationList from '@/features/conversation/list/ConversationList.vue'
 import ConversationPlaceholder from '@/features/conversation/ConversationPlaceholder.vue'
 import { useInboxStore } from '@/stores/inbox'
-import { useUsersStore } from '@/stores/users'
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -59,9 +66,8 @@ const isSearchRoute = computed(() => route.name === 'search')
 const isConversationOpen = computed(() => !!route.params.uuid)
 
 const inboxStore = useInboxStore()
-const usersStore = useUsersStore()
-// Показывать setup-экран пока не настроен первый инбокс или не приглашён агент
-const needsSetup = computed(() => !inboxStore.inboxes.length || !usersStore.users.length)
+// Показывать setup-экран только пока не создан первый инбокс
+const needsSetup = computed(() => !inboxStore.inboxes.length)
 
 // Persist panel sizes: [conversationList, conversationDetail]
 const panelSizes = useStorage('inboxPanelSizes', [25, 75])
