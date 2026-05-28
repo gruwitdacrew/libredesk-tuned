@@ -22,7 +22,7 @@ const props = defineProps({
   tooltip: { type: null, required: false },
 });
 
-const { isMobile, state } = useSidebar();
+const { isMobile, state, setOpenMobile } = useSidebar();
 
 const delegatedProps = computed(() => {
   const { tooltip, ...delegated } = props;
@@ -34,13 +34,14 @@ const delegatedProps = computed(() => {
   <SidebarMenuButtonChild
     v-if="!tooltip"
     v-bind="{ ...delegatedProps, ...$attrs }"
+    @click="isMobile && setOpenMobile(false)"
   >
     <slot />
   </SidebarMenuButtonChild>
 
   <Tooltip v-else>
     <TooltipTrigger as-child>
-      <SidebarMenuButtonChild v-bind="{ ...delegatedProps, ...$attrs }">
+      <SidebarMenuButtonChild v-bind="{ ...delegatedProps, ...$attrs }" @click="isMobile && setOpenMobile(false)">
         <slot />
       </SidebarMenuButtonChild>
     </TooltipTrigger>
