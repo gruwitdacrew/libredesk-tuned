@@ -5,7 +5,7 @@
   <div class="space-y-6">
     <div v-if="currentStep === 1" class="space-y-4 mt-10">
       <h3 class="font-semibold text-lg">{{ $t('admin.inbox.chooseChannel') }}</h3>
-      <div class="flex space-x-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <MenuCard
           v-for="channel in channels"
           :key="channel.title"
@@ -14,9 +14,8 @@
           :subTitle="channel.subTitle"
           :icon="channel.icon"
           :badge="channel.badge"
-          class="w-full max-w-sm cursor-pointer"
-        >
-        </MenuCard>
+          class="w-full cursor-pointer"
+        />
       </div>
     </div>
 

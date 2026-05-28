@@ -1,18 +1,18 @@
 <template>
   <div class="overflow-y-auto">
     <div
-      class="p-6 w-[calc(100%-3rem)]"
+      class="p-3 sm:p-6 w-full"
       :class="{ 'opacity-50 transition-opacity duration-300': isLoading }"
     >
       <Spinner v-if="isLoading" />
 
-      <div class="space-y-6">
+      <div class="space-y-4 sm:space-y-6">
         <div class="text-sm text-gray-500 text-left">
           {{ $t('globals.terms.lastUpdated') }}: {{ lastUpdateFormatted }}
         </div>
 
         <!-- Row 1: Open Conversations and Agent Status -->
-        <div class="flex w-full space-x-4">
+        <div class="flex flex-col sm:flex-row w-full gap-4">
           <Card
             class="flex-1"
             :title="$t('report.openConversations')"
@@ -30,14 +30,14 @@
         </div>
 
         <!-- Row 2: CSAT and Message Volume -->
-        <div class="flex w-full space-x-4">
+        <div class="flex flex-col sm:flex-row w-full gap-4">
           <!-- CSAT Card -->
           <div class="flex-1 box p-5">
             <div class="flex justify-between items-center mb-4">
               <p class="card-title">{{ $t('report.csat.cardTitle', { days: csatDays }) }}</p>
               <DateFilter @filter-change="handleCSATFilterChange" :label="''" />
             </div>
-            <div class="grid grid-cols-3 gap-6">
+            <div class="grid grid-cols-3 gap-2 sm:gap-6">
               <div class="metric-item">
                 <span class="metric-value">{{ formatRating(csatData.average_rating) }}</span>
                 <span class="metric-label">{{ $t('report.csat.avgRating') }}</span>
@@ -63,7 +63,7 @@
               </p>
               <DateFilter @filter-change="handleMessageVolumeFilterChange" :label="''" />
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
               <div class="metric-item">
                 <span class="metric-value">{{
                   formatCompactNumber(messageVolumeData.total_messages || 0)
@@ -99,7 +99,7 @@
             <DateFilter @filter-change="handleSlaFilterChange" :label="''" />
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             <!-- First Response -->
             <div class="space-y-4">
               <p class="section-title">{{ $t('report.sla.firstResponse') }}</p>
@@ -132,7 +132,7 @@
             </div>
 
             <!-- Next Response -->
-            <div class="space-y-4 border-l border-r px-8">
+            <div class="space-y-4 md:border-l md:border-r px-0 md:px-8 pt-4 md:pt-0">
               <p class="section-title">{{ $t('report.sla.nextResponse') }}</p>
               <div class="metric-item">
                 <span class="metric-value text-green-600"
@@ -242,7 +242,7 @@
             <p class="card-title">{{ $t('report.chart.title') }}</p>
             <DateFilter @filter-change="handleChartFilterChange" :label="''" />
           </div>
-          <LineChart :data="processedLineData" />
+          <LineChart :data="processedLineData" class="h-[220px] sm:h-[400px]" />
         </div>
       </div>
     </div>
@@ -561,11 +561,7 @@ onUnmounted(() => {
 
 <style scoped>
 .metric-value {
-  @apply text-3xl font-bold tracking-tight;
-}
-
-.metric-value {
-  @apply text-3xl font-bold tracking-tight;
+  @apply text-xl sm:text-3xl font-bold tracking-tight;
 }
 
 .metric-label {
@@ -573,7 +569,7 @@ onUnmounted(() => {
 }
 
 .card-title {
-  @apply text-xl font-medium;
+  @apply text-base sm:text-xl font-medium;
 }
 
 .metric-item {

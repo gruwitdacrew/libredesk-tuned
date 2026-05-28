@@ -1,7 +1,7 @@
 <template>
   <div>
     <Dialog v-model:open="dialogOpen">
-      <DialogContent class="max-w-5xl w-full h-[90vh] flex flex-col" >
+      <DialogContent class="max-w-5xl w-[calc(100%-1rem)] sm:w-full h-[95dvh] sm:h-[90vh] flex flex-col p-3 sm:p-6 overflow-hidden" :disableOutsidePointerEvents="false">
         <DialogHeader>
           <DialogTitle>
             {{ $t('conversation.newConversation') }}
@@ -9,9 +9,11 @@
           <DialogDescription />
         </DialogHeader>
 
-        <form @submit="createConversation" class="flex flex-col flex-1 overflow-hidden">
-          <!-- Form Fields Section -->
-          <div class="space-y-4 pb-2 flex-shrink-0">
+        <form @submit="createConversation" class="flex flex-col flex-1 min-h-0">
+          <!-- Scrollable area: form fields + editor (footer stays pinned below) -->
+          <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
+            <!-- Form Fields Section -->
+            <div class="space-y-4 pb-2 flex-shrink-0">
             <div class="space-y-2">
               <FormField name="contact_email">
                 <FormItem class="relative">
@@ -67,7 +69,7 @@
               </FormField>
 
               <!-- Name Group -->
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <FormField v-slot="{ componentField }" name="first_name">
                   <FormItem>
                     <FormLabel>{{ $t('globals.terms.firstName') }}</FormLabel>
@@ -101,7 +103,7 @@
               </div>
 
               <!-- Subject and Inbox Group -->
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <FormField v-slot="{ componentField }" name="subject">
                   <FormItem>
                     <FormLabel>{{ $t('globals.terms.subject') }}</FormLabel>
@@ -139,7 +141,7 @@
               </div>
 
               <!-- Assignment Group -->
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <!-- Set assigned team -->
                 <FormField v-slot="{ componentField }" name="team_id">
                   <FormItem>
@@ -188,7 +190,7 @@
           </div>
 
           <!-- Message Editor Section -->
-          <div class="flex-1 flex flex-col min-h-0 mt-4">
+          <div class="flex-1 flex flex-col min-h-[180px] mt-4">
             <FormField v-slot="{ componentField }" name="content">
               <FormItem class="flex flex-col h-full">
                 <FormLabel>{{ $t('globals.terms.message') }}</FormLabel>
@@ -238,6 +240,8 @@
             </FormField>
           </div>
 
+          </div><!-- /scrollable area -->
+
           <DialogFooter class="mt-4 pt-2 flex items-center !justify-between w-full flex-shrink-0">
             <ReplyBoxMenuBar
               :handleFileUpload="handleFileUpload"
@@ -275,7 +279,7 @@ import {
   FormMessage
 } from '@shared-ui/components/ui/form'
 import { z } from 'zod'
-import { ref, watch, onUnmounted, nextTick, onMounted, computed } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import ReplyBoxAttachmentPreview from '@/features/conversation/message/attachment/ReplyBoxAttachmentPreview.vue'
 import { useConversationStore } from '../../stores/conversation'
 import MacroActionsPreview from '@/features/conversation/MacroActionsPreview.vue'
@@ -363,25 +367,43 @@ const formSchema = z.object({
   last_name: z.string().optional()
 })
 
-onUnmounted(() => {
-  clearTimeout(timeoutId)
-  clearMediaFiles()
-  conversationStore.resetMacro(MACRO_CONTEXT.NEW_CONVERSATION)
-  emitter.emit(EMITTER_EVENTS.SET_NESTED_COMMAND, {
-    command: null,
-    open: false
-  })
-})
-
-onMounted(() => {
-  macroStore.setCurrentView('starting_conversation')
-  emitter.emit(EMITTER_EVENTS.SET_NESTED_COMMAND, {
-    command: 'apply-macro-to-new-conversation',
-    open: false
-  })
-  nextTick(() => {
+watch(dialogOpen, async (isOpen) => {
+  if (isOpen) {
+    macroStore.setCurrentView('starting_conversation')
+    emitter.emit(EMITTER_EVENTS.SET_NESTED_COMMAND, {
+      command: 'apply-macro-to-new-conversation',
+      open: false
+    })
+    await nextTick()
     emailInputRef.value?.$el?.focus()
-  })
+  } else {
+    clearTimeout(timeoutId)
+    clearMediaFiles()
+    form.resetForm()
+    emailQuery.value = ''
+    searchResults.value.splice(0)
+    selectedContact.value = null
+    highlightedIndex.value = -1
+    insertContent.value = ''
+    conversationStore.resetMacro(MACRO_CONTEXT.NEW_CONVERSATION)
+    emitter.emit(EMITTER_EVENTS.SET_NESTED_COMMAND, { command: null, open: false })
+
+    // radix-vue (через пакет aria-hidden) ставит `inert` + `aria-hidden` на #app
+    // при открытии диалога. Если в момент закрытия диалога был открыт Select/Popover,
+    // hideOthers cleanup может не завершиться — `inert` остаётся и блокирует всё.
+    // Запускаем cleanup с задержкой 350ms (после анимации закрытия ~200ms).
+    setTimeout(() => {
+      document.body.style.pointerEvents = ''
+      document.body.removeAttribute('data-scroll-locked')
+      // Снять inert и aria-hidden со всех прямых детей body (там сидит #app)
+      document.body.childNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          node.removeAttribute('inert')
+          node.removeAttribute('aria-hidden')
+        }
+      })
+    }, 350)
+  }
 })
 
 const form = useForm({

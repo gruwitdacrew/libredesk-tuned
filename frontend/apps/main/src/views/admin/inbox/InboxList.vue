@@ -3,14 +3,58 @@
     <div class="flex justify-between mb-5">
       <div></div>
       <router-link :to="{ name: 'new-inbox' }">
-        <Button>
-          {{
-            $t('inbox.newInbox')
-          }}
-        </Button>
+        <Button>{{ $t('inbox.newInbox') }}</Button>
       </router-link>
     </div>
-    <div>
+
+    <!-- Mobile: card list -->
+    <div v-if="isMobile" class="space-y-3">
+      <div
+        v-if="isLoading"
+        class="text-center text-sm text-muted-foreground py-8"
+      >{{ $t('globals.terms.loading') }}</div>
+      <div
+        v-else-if="!data.length"
+        class="flex flex-col items-center gap-2 py-12 text-muted-foreground"
+      >
+        <Ghost class="h-8 w-8 opacity-50" />
+        <p class="text-sm">{{ $t('globals.messages.noResultsFound') }}</p>
+      </div>
+      <div
+        v-for="inbox in data"
+        :key="inbox.id"
+        class="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3 shadow-sm"
+      >
+        <div class="flex flex-col gap-1 min-w-0">
+          <router-link
+            :to="{ name: 'edit-inbox', params: { id: inbox.id } }"
+            class="text-sm font-medium text-primary hover:underline truncate"
+          >{{ inbox.name }}</router-link>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+              {{ inbox.channel }}
+            </span>
+            <span
+              class="inline-flex items-center rounded-full px-2 py-0.5 text-xs"
+              :class="inbox.enabled
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-muted text-muted-foreground'"
+            >
+              {{ inbox.enabled ? $t('globals.messages.enable') : $t('globals.messages.disable') }}
+            </span>
+          </div>
+        </div>
+        <InboxDataTableDropDown
+          :inbox="inbox"
+          @editInbox="handleEditInbox"
+          @deleteInbox="handleDeleteInbox"
+          @toggleInbox="handleToggleInbox"
+        />
+      </div>
+    </div>
+
+    <!-- Desktop: data table -->
+    <div v-else>
       <DataTable :columns="columns" :data="data" :loading="isLoading" />
     </div>
   </LoadingOverlay>
@@ -20,6 +64,8 @@
 import { onMounted, ref } from 'vue'
 import { h } from 'vue'
 import { RouterLink } from 'vue-router'
+import { Ghost } from 'lucide-vue-next'
+import { useMediaQuery } from '@vueuse/core'
 import InboxDataTableDropDown from '@main/features/admin/inbox/InboxDataTableDropDown.vue'
 import { handleHTTPError } from '@shared-ui/utils/http.js'
 import { Button } from '@shared-ui/components/ui/button'
@@ -32,6 +78,8 @@ import { format } from 'date-fns'
 import LoadingOverlay from '@main/components/layout/LoadingOverlay.vue'
 import { useInboxStore } from '@main/stores/inbox'
 import api from '@main/api'
+
+const isMobile = useMediaQuery('(max-width: 768px)')
 
 const { t } = useI18n()
 const router = useRouter()

@@ -2,7 +2,15 @@
   <div class="flex flex-col h-full">
     <!-- Header -->
     <div class="h-12 flex-shrink-0 px-2 border-b flex items-center justify-between">
-      <div>
+      <div class="flex items-center gap-2">
+        <button
+          v-if="isMobile"
+          @click="goBack"
+          class="p-1 rounded hover:bg-accent"
+          aria-label="Back"
+        >
+          <ChevronLeft class="h-5 w-5" />
+        </button>
         <span v-if="!conversationStore.conversation.loading">
           {{ conversationStore.currentContactName }}
         </span>
@@ -43,6 +51,9 @@
 </template>
 
 <script setup>
+import { useRouter, useRoute } from 'vue-router'
+import { useMediaQuery } from '@vueuse/core'
+import { ChevronLeft } from 'lucide-vue-next'
 import { useConversationStore } from '../../stores/conversation'
 import {
   DropdownMenu,
@@ -56,8 +67,24 @@ import { EMITTER_EVENTS } from '../../constants/emitterEvents.js'
 import { CONVERSATION_DEFAULT_STATUSES } from '../../constants/conversation'
 import { useEmitter } from '../../composables/useEmitter'
 import { Skeleton } from '@shared-ui/components/ui/skeleton'
+
+const router = useRouter()
+const route = useRoute()
+const isMobile = useMediaQuery('(max-width: 768px)')
 const conversationStore = useConversationStore()
 const emitter = useEmitter()
+
+const goBack = () => {
+  if (route.params.teamID) {
+    router.push({ name: 'team-inbox', params: { teamID: route.params.teamID } })
+  } else if (route.params.viewID) {
+    router.push({ name: 'view-inbox', params: { viewID: route.params.viewID } })
+  } else if (route.params.type) {
+    router.push({ name: 'inbox', params: { type: route.params.type } })
+  } else {
+    router.back()
+  }
+}
 
 const handleUpdateStatus = (status) => {
   if (status === CONVERSATION_DEFAULT_STATUSES.SNOOZED) {
