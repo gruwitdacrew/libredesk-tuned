@@ -93,20 +93,11 @@ func (m *Manager) Get(uuid string) (models.CSATResponse, error) {
 
 // UpdateResponse updates the CSAT response for the given csat.
 func (m *Manager) UpdateResponse(uuid string, score int, feedback string, meta json.RawMessage) error {
-	csat, err := m.Get(uuid)
-	if err != nil {
-		return err
-	}
-
-	if csat.ResponseTimestamp.Valid {
-		return envelope.NewError(envelope.InputError, m.i18n.T("csat.alreadySubmitted"), nil)
-	}
-
 	if len(meta) == 0 {
 		meta = json.RawMessage(`{}`)
 	}
 
-	_, err = m.q.Update.Exec(uuid, score, feedback, meta)
+	_, err := m.q.Update.Exec(uuid, score, feedback, meta)
 	if err != nil {
 		m.lo.Error("error updating CSAT", "error", err)
 		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
