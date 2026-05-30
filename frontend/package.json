@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm exec vite",
     "dev:main": "pnpm exec vite --mode main",
-    "dev:widget": "pnpm exec vite --mode widget",
+    "dev:widget": "pnpm exec vite --mode widget --host",
     "build:main": "vite build --mode main",
     "build:widget": "vite build --mode widget",
     "preview": "vite preview",
