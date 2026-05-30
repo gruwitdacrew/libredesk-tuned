@@ -1,0 +1,20 @@
+.loader {
+	position: absolute;
+	bottom: 5rem;
+	left: 0;
+	right: 0;
+	text-align: center;
+	z-index: 2;
+	pointer-events: none;
+	display: none;
+}
+
+.loader--visible {
+	display: block;
+}
+
+.loader__text {
+	font-size: 0.875rem;
+	color: var(--cw-primary);
+	line-height: 1.4;
+}

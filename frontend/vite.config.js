@@ -18,7 +18,7 @@ export default defineConfig(({ mode, command }) => {
   const tailwindConfig = require('./tailwind.config.cjs')
   const scopedContent = [
     `./apps/${isWidget ? 'widget' : 'main'}/src/**/*.{js,ts,vue}`,
-    './shared-ui/**/*.{js,ts,vue}',
+    './shared-ui/**/*.{js,ts,vue}'
   ]
 
   return {
@@ -26,52 +26,52 @@ export default defineConfig(({ mode, command }) => {
     css: {
       preprocessorOptions: {
         scss: {
-          api: 'modern',
-        },
+          api: 'modern'
+        }
       },
       postcss: {
-        plugins: [tailwind({ ...tailwindConfig, content: scopedContent }), autoprefixer()],
-      },
+        plugins: [tailwind({ ...tailwindConfig, content: scopedContent }), autoprefixer()]
+      }
     },
     root: path.resolve(__dirname, appPath),
     publicDir: path.resolve(__dirname, 'public'),
     // Separate cache per app to avoid stale/conflicting caches.
     cacheDir: path.resolve(__dirname, `node_modules/.vite-${isWidget ? 'widget' : 'main'}`),
     server: {
-      cors: { origin: "*" },
+      cors: { origin: '*' },
       // Allow access to parent dir so shared-ui imports work in dev.
       fs: {
-        allow: [path.resolve(__dirname)],
+        allow: [path.resolve(__dirname)]
       },
       port: isWidget ? 8001 : 8000,
       proxy: {
         '/api': {
           target: 'http://127.0.0.1:9000',
-          changeOrigin: true,
+          changeOrigin: true
         },
         '/widget.js': {
           target: 'http://127.0.0.1:9000',
-          changeOrigin: true,
+          changeOrigin: true
         },
         '/logout': {
           target: 'http://127.0.0.1:9000',
-          changeOrigin: true,
+          changeOrigin: true
         },
         '/uploads': {
           target: 'http://127.0.0.1:9000',
-          changeOrigin: true,
+          changeOrigin: true
         },
         '/ws': {
           target: 'ws://127.0.0.1:9000',
           ws: true,
-          changeOrigin: true,
+          changeOrigin: true
         },
         '/widget/ws': {
           target: 'ws://127.0.0.1:9000',
           ws: true,
-          changeOrigin: true,
+          changeOrigin: true
         }
-      },
+      }
     },
     build: {
       outDir: isWidget
@@ -81,42 +81,40 @@ export default defineConfig(({ mode, command }) => {
       chunkSizeWarningLimit: 600,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vue-vendor': ['vue', 'vue-router', 'pinia'],
-            'radix': ['radix-vue', 'reka-ui'],
-            'icons': ['lucide-vue-next', '@radix-icons/vue'],
-            'utils': ['@vueuse/core', 'clsx', 'tailwind-merge', 'class-variance-authority'],
-            'forms': ['vee-validate', '@vee-validate/zod', 'zod'],
-            'misc': ['axios', 'date-fns', 'mitt', 'qs', 'vue-i18n'],
-            // Main-app-only chunks - widget doesn't use these libraries.
-            ...(!isWidget && {
-              'charts': ['@unovis/ts', '@unovis/vue'],
-              'editor': [
-                '@tiptap/vue-3',
-                '@tiptap/starter-kit',
-                '@tiptap/extension-image',
-                '@tiptap/extension-link',
-                '@tiptap/extension-placeholder',
-                '@tiptap/extension-table',
-                '@tiptap/extension-table-cell',
-                '@tiptap/extension-table-header',
-                '@tiptap/extension-table-row',
-              ],
-              'codemirror': ['codemirror', '@codemirror/lang-html', '@codemirror/lang-javascript', '@codemirror/theme-one-dark'],
-              'table': ['@tanstack/vue-table'],
-            }),
-          },
-        },
-      },
+          manualChunks: (id) => {
+            if (['vue', 'vue-router', 'pinia'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'vue-vendor'
+            if (['radix-vue', 'reka-ui'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'radix'
+            if (['lucide-vue-next', '@radix-icons'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'icons'
+            if (['@vueuse', 'clsx', 'tailwind-merge', 'class-variance-authority'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'utils'
+            if (['vee-validate', 'zod'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'forms'
+            if (['axios', 'date-fns', 'mitt', 'qs', 'vue-i18n'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'misc'
+            if (!isWidget) {
+              if (['@unovis'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'charts'
+              if (['@tiptap'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'editor'
+              if (['codemirror', '@codemirror'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'codemirror'
+              if (id.includes('/node_modules/.pnpm/@tanstack+vue-table')) return 'table'
+            }
+          }
+        }
+      }
     },
     plugins: [vue()],
     resolve: {
+      tsconfigPaths: true,
       alias: {
         '@': path.resolve(__dirname, `${appPath}/src`),
         '@main': path.resolve(__dirname, 'apps/main/src'),
         '@widget': path.resolve(__dirname, 'apps/widget/src'),
         '@shared-ui': path.resolve(__dirname, 'shared-ui'),
-      },
-    },
+        ...(isWidget && {
+          '@icons': path.resolve(__dirname, 'apps/widget/src/ui/icons'),
+          '@parts': path.resolve(__dirname, 'apps/widget/src/ui/parts'),
+          '@actions': path.resolve(__dirname, 'apps/widget/src/core/actions'),
+          '@store': path.resolve(__dirname, 'apps/widget/src/core/store/store'),
+          '@types': path.resolve(__dirname, 'apps/widget/src/core/types'),
+          '@utils': path.resolve(__dirname, 'apps/widget/src/utils'),
+        }),
+      }
+    }
   }
 })

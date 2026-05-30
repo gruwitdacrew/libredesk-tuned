@@ -1,0 +1,45 @@
+:host {
+	all: initial;
+
+	position: fixed;
+	right: 20px;
+	bottom: 20px;
+	z-index: 2147483000;
+
+	display: block;
+	font-family: var(--cw-font-family);
+	font-size: var(--cw-font-size);
+	line-height: var(--cw-line-height);
+	color: var(--cw-text-color);
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+button {
+	font: inherit;
+	color: inherit;
+	background: none;
+	border: none;
+	cursor: pointer;
+}
+
+input,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+textarea {
+	resize: none;
+}
+
+svg {
+	display: block;
+	flex-shrink: 0;
+}
