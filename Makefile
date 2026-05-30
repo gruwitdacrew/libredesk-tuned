@@ -5,7 +5,7 @@ VERSION := "v0.0.0"
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT})
 
 # Binary names and paths
-BIN := ./out/libredesk.exe
+BIN := ./out/libredesk
 FRONTEND_DIR := frontend
 FRONTEND_DIST := ${FRONTEND_DIR}/dist
 STATIC := ${FRONTEND_DIST} i18n schema.sql static
