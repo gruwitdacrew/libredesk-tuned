@@ -5,7 +5,7 @@ VERSION := "v0.0.0"
 BUILDSTR := ${VERSION} (\#${LAST_COMMIT})
 
 # Binary names and paths
-BIN := libredesk.exe
+BIN := ./out/libredesk.exe
 FRONTEND_DIR := frontend
 FRONTEND_DIST := ${FRONTEND_DIR}/dist
 STATIC := ${FRONTEND_DIST} i18n schema.sql static
@@ -81,7 +81,7 @@ build-backend: $(STUFFBIN)
 	@echo "→ Building backend..."
 	@go build -a \
 		-ldflags="-X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'github.com/abhinavxd/libredesk/internal/version.Version=${VERSION}' -s -w" \
-		-o ./out/${BIN} ./cmd/...
+		-o ${BIN} ./cmd/...
 
 # Main build target: builds both frontend and backend, then stuffs static assets into the binary.
 .PHONY: build

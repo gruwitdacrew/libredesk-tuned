@@ -139,8 +139,8 @@ func handleSubmitCSATResponse(r *fastglue.Request) error {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, "Invalid JSON", nil, envelope.InputError)
 	}
 
-	if req.Rating < 0 || req.Rating > 5 {
-		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, "Rating must be between 0 and 5 (0 means no rating)", nil, envelope.InputError)
+	if req.Rating < 0 || req.Rating > 2 {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, "Rating must be between 0 and 2 (0 means no rating)", nil, envelope.InputError)
 	}
 
 	// At least one of rating or feedback must be provided
