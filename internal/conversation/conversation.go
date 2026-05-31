@@ -1523,25 +1523,27 @@ func (m *Manager) SendCSATReply(actorUserID int, conversation models.Conversatio
 		}
 		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
 	}
-	appRootURL, err := m.settingsStore.GetAppRootURL()
-	if err != nil {
-		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
-	}
-	csatPublicURL := m.csatStore.MakePublicURL(appRootURL, csatResp.UUID)
+	// appRootURL, err := m.settingsStore.GetAppRootURL()
+	// if err != nil {
+	// 	return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+	// }
+	// csatPublicURL := m.csatStore.MakePublicURL(appRootURL, csatResp.UUID)
 
-	// Render CSAT email template.
-	data, err := m.BuildTemplateData(conversation.UUID, actorUserID)
-	if err != nil {
-		m.lo.Error("error building CSAT template data", "conversation_uuid", conversation.UUID, "error", err)
-		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
-	}
-	data["CSATLink"] = csatPublicURL
-	data["CSATUUID"] = csatResp.UUID
-	message, err := m.template.RenderStoredTemplate(template.TmplCSATRequest, data)
-	if err != nil {
-		m.lo.Error("error rendering CSAT template", "conversation_uuid", conversation.UUID, "error", err)
-		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
-	}
+	// // Render CSAT email template.
+	// data, err := m.BuildTemplateData(conversation.UUID, actorUserID)
+	// if err != nil {
+	// 	m.lo.Error("error building CSAT template data", "conversation_uuid", conversation.UUID, "error", err)
+	// 	return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+	// }
+	// data["CSATLink"] = csatPublicURL
+	// data["CSATUUID"] = csatResp.UUID
+	// message, err := m.template.RenderStoredTemplate(template.TmplCSATRequest, data)
+	// if err != nil {
+	// 	m.lo.Error("error rendering CSAT template", "conversation_uuid", conversation.UUID, "error", err)
+	// 	return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+	// }
+
+	message := "Был ли мой ответ полезен? Ваша оценка поможет мне стать лучше."
 
 	meta := map[string]any{
 		"is_csat":      true,
