@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["node"],
+
+    "noEmit": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "noUncheckedSideEffectImports": true,
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    "paths": {
+      "@/*": ["./apps/main/src/*"],
+      "@main/*": ["./apps/main/src/*"],
+      "@widget/*": ["./apps/widget/src/*"],
+      "@shared-ui/*": ["./shared-ui/*"],
+      "@icons": ["./apps/widget/src/ui/icons"],
+      "@parts": ["./apps/widget/src/ui/parts"],
+      "@actions": ["./apps/widget/src/core/actions"],
+      "@store": ["./apps/widget/src/core/store/store"],
+      "@types": ["./apps/widget/src/core/types"],
+      "@utils": ["./apps/widget/src/utils"]
+    }
+  },
+  "include": ["apps/widget/src"],
+  "exclude": ["apps/main", "shared-ui", "src", "node_modules", "dist"]
+}

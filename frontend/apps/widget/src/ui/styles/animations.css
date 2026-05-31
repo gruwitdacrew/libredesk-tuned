@@ -1,0 +1,9 @@
+@keyframes pulse-white {
+	0%,
+	100% {
+		background-color: var(--cw-online-color);
+	}
+	50% {
+		background-color: var(--cw-white);
+	}
+}

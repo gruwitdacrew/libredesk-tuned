@@ -1,0 +1,27 @@
+:host {
+	--cw-font-family: 'Sirius', 'Sirius Pro', system-ui, -apple-system, sans-serif;
+
+	--cw-font-size: 16px;
+	--cw-line-height: 24px;
+
+	--cw-shadow: 0 2px 4px -2px rgb(24 39 75 / 0.12), 0 4px 4px -2px rgb(24 39 75 / 0.08);
+
+	--cw-primary: #723aa2;
+	--cw-secondary: #f7edff;
+	--cw-primary-hover: #c090ea;
+
+	--cw-white: #ffffff;
+	--cw-gray: #545e69;
+
+	--cw-text-color: #1e2427;
+	--cw-secondary-text-color: #c6c6c6;
+	--cw-disabled: #f7f8f9;
+
+	--cw-icon-disabled: #c6c6c6;
+	--cw-bg-avatar: #ccaee6;
+
+	--cw-online-color: #6ce778;
+	--cw-status-border: #f3f5f6;
+
+	--cw-border-color: #c6c6c6;
+}
