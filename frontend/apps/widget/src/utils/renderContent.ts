@@ -1,52 +1,32 @@
-import LinkifyIt from 'linkify-it';
+import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
-const linkify = new LinkifyIt();
+// Bot/agent messages arrive as Markdown (LLM output). We render them with
+// `marked` (GFM: bold/italic, ordered & unordered lists, code, headings,
+// autolinked URLs) and then sanitize the result with DOMPurify — `marked`
+// produces HTML but does NOT sanitize it.
+marked.setOptions({
+	gfm: true, // GitHub-flavored Markdown: autolinks bare URLs, ~~strikethrough~~, etc.
+	breaks: true, // a single "\n" becomes <br>, which matches chat expectations
+});
 
-const esc = (s: string): string =>
-	s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-const bold = (html: string): string =>
-	html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-const processInline = (text: string): string => {
-	const matches = linkify.match(text);
-	if (!matches) return bold(esc(text));
-
-	let result = '';
-	let cursor = 0;
-	for (const m of matches) {
-		result += bold(esc(text.slice(cursor, m.index)));
-		result += `<a href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">${esc(m.text)}</a>`;
-		cursor = m.lastIndex;
+// Make every link open safely in a new, isolated tab.
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+	if (node.nodeName === 'A') {
+		node.setAttribute('target', '_blank');
+		node.setAttribute('rel', 'noopener noreferrer');
 	}
-	return result + bold(esc(text.slice(cursor)));
-};
+});
 
-export const renderContent = (text: string): string => {
-	const lines = text.split('\n');
-	const parts: string[] = [];
-	const items: string[] = [];
-
-	const flushList = (): void => {
-		if (items.length > 0) {
-			parts.push(`<ul>${items.join('')}</ul>`);
-			items.length = 0;
-		}
-	};
-
-	for (const line of lines) {
-		if (line.startsWith('- ')) {
-			items.push(`<li>${processInline(line.slice(2))}</li>`);
-		} else {
-			flushList();
-			parts.push(processInline(line));
-		}
-	}
-	flushList();
-
-	return DOMPurify.sanitize(parts.join('<br>'), {
-		ALLOWED_TAGS: ['strong', 'ul', 'li', 'a', 'br'],
+export const renderContent = (text: string): string =>
+	DOMPurify.sanitize(marked.parse(text) as string, {
+		ALLOWED_TAGS: [
+			'p', 'br', 'hr',
+			'strong', 'em', 'b', 'i', 's', 'del',
+			'ul', 'ol', 'li',
+			'a', 'code', 'pre', 'blockquote',
+			'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+			'table', 'thead', 'tbody', 'tr', 'th', 'td',
+		],
 		ALLOWED_ATTR: ['href', 'target', 'rel'],
 	});
-};
