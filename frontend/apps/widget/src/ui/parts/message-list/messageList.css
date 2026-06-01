@@ -29,6 +29,8 @@
 	.chat {
 		flex: 1;
 		height: auto;
+		/* Extra bottom room for the composer once it's lifted past the home indicator. */
+		padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
 	}
 
 	.chat__messages {
@@ -48,6 +50,8 @@
 	column-gap: 0.75rem;
 
 	width: max-content;
+	/* Never let the long label overflow the viewport; keep clear of both edges. */
+	max-width: calc(100% - 1rem);
 	padding: 0.5rem 1.5rem;
 	border: 1px solid var(--cw-border-color);
 	border-radius: 4rem;
@@ -67,6 +71,13 @@
 	svg {
 		width: 1rem;
 		height: 1rem;
+	}
+
+	span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		min-width: 0;
 	}
 }
 

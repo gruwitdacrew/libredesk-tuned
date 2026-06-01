@@ -13,6 +13,12 @@
 	display: block;
 }
 
+@media (max-width: 480px) {
+	.loader {
+		bottom: calc(5rem + env(safe-area-inset-bottom));
+	}
+}
+
 .loader__text {
 	font-size: 0.875rem;
 	color: var(--cw-primary);

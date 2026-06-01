@@ -1,16 +1,20 @@
 .message-wrapper {
 	max-width: 18.75rem;
 	width: fit-content;
+
+	/* Cap on the wrapper, where 100% resolves against the real message list —
+	   NOT on .message, whose parent is fit-content (that creates a circular
+	   width and collapses short messages to min-width, breaking them mid-word). */
+	@media (max-width: 480px) {
+		max-width: calc(100% - 2rem);
+	}
+
 	.message {
 		display: flex;
 		flex-direction: column;
-		max-width: 18.75rem;
+		max-width: 100%;
 		width: fit-content;
 		min-width: 4rem;
-
-		@media (max-width: 480px) {
-			max-width: calc(100% - 2rem);
-		}
 
 		.message__text {
 			box-shadow: var(--cw-shadow);

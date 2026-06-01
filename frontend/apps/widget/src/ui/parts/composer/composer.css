@@ -10,6 +10,8 @@
 @media (max-width: 480px) {
 	.composer__wrapper {
 		width: calc(100% - 1.5rem);
+		/* Lift above the iOS home indicator on fullscreen mobile. */
+		bottom: max(0.75rem, env(safe-area-inset-bottom));
 	}
 }
 
