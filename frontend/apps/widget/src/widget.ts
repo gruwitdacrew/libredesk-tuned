@@ -28,7 +28,7 @@ export class WebChat extends HTMLElement {
   private ws: LibredeskWs | null = null
 
   private store = createStore<WidgetStore>({
-    botStatus: 'escalated',
+    botStatus: 'online',
     messages: [
       greetMessage,
     ],
