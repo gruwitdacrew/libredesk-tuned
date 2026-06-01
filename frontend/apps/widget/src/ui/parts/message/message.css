@@ -19,11 +19,14 @@
 			word-wrap: break-word;
 			white-space: pre-wrap;
 
-			ul {
+			ul, ol {
 				padding-left: 1.25rem;
 				margin: 0.25rem 0;
-				list-style: disc;
 				white-space: normal;
+			}
+
+			ul {
+				list-style: disc;
 			}
 
 			li { margin: 0.125rem 0; }

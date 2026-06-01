@@ -34,7 +34,7 @@ const mapMessage = (msg: LibredeskMessage): Message => {
 	const type = resolveType(msg);
 	return {
 		id: msg.uuid,
-		content: msg.author.type === 'agent' ? (msg.text_content ?? msg.content) : msg.content,
+		content: msg.author.type === 'agent' ? (msg.content) : msg.content,
 		type,
 		author: msg.author.type === 'agent' ? 'bot' : 'user',
 		timestamp: new Date(msg.created_at).getTime(),
