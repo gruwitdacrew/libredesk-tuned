@@ -16,6 +16,8 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 
 	button.append(createIcon('user'), span);
 
+	button.addEventListener('click', () => { handlers.onContactManager(); });
+
 	chat.append(button);
 
 	const messagesEl = document.createElement('div');

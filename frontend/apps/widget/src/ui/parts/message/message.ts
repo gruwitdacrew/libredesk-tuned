@@ -40,11 +40,12 @@ const buildEscalation1Btns = (): HTMLElement => {
 
 	// These come from build-time env and may be undefined when not set in .env.
 	const tg = import.meta.env.VITE_ESCALATION_TELEGRAM ?? '';
+	const max = import.meta.env.VITE_ESCALATION_MAX ?? '';
 	const email = import.meta.env.VITE_ESCALATION_EMAIL ?? '';
 
 	const configs: BtnConfig[] = [
 		{ icon: 'telegram', label: 'Telegram', mod: 'tg',    href: tg.length > 0 ? `https://t.me/${tg}` : null },
-		{ icon: 'max',      label: 'MAX',       mod: '1984',  href: null },
+		{ icon: 'max',      label: 'MAX',       mod: '1984',  href: max.length > 0 ? max : null },
 		{ icon: 'email',    label: 'Почта',     mod: 'email', href: email.length > 0 ? `mailto:${email}` : null },
 	];
 

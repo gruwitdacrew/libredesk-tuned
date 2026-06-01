@@ -132,7 +132,10 @@ export class WebChat extends HTMLElement {
           chatActions.rateCsat(uuid, rating)
         },
         onCsatReason: (uuid, rating, reason) =>
-          chatActions.submitCsatReason(uuid, rating, reason)
+          chatActions.submitCsatReason(uuid, rating, reason),
+        onContactManager: () => {
+          void chatActions.sendMessage('Переведите на руководителя')
+        }
       }
     )
 

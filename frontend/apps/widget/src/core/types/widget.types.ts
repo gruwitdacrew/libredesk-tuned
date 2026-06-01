@@ -42,6 +42,7 @@ export interface MessageHandlers {
 	onChannelSelect: (ch: 'telegram' | 'max' | 'email') => void;
 	onCsatRate: (csatUuid: string, rating: CsatRating) => void;
 	onCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>;
+	onContactManager: () => void;
 }
 
 export interface WidgetContext {
