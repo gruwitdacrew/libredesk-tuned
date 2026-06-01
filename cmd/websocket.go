@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
 
 	amodels "github.com/abhinavxd/libredesk/internal/auth/models"
 	"github.com/abhinavxd/libredesk/internal/ws"
@@ -23,22 +21,23 @@ var agentUpgrader = websocket.FastHTTPUpgrader{
 	ReadBufferSize:  8192,
 	WriteBufferSize: 8192,
 	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool {
-		origin := string(ctx.Request.Header.Peek("Origin"))
-		if origin == "" {
-			return false
-		}
-		u, err := url.Parse(origin)
-		if err != nil || u.Host == "" {
-			return false
-		}
-		isLocalhost := u.Hostname() == "localhost"
-		if u.Scheme != "https" && !isLocalhost {
-			return false
-		}
-		if strings.EqualFold(u.Host, string(ctx.Request.Host())) {
-			return true
-		}
-		return isLocalhost
+		// origin := string(ctx.Request.Header.Peek("Origin"))
+		// if origin == "" {
+		// 	return false
+		// }
+		// u, err := url.Parse(origin)
+		// if err != nil || u.Host == "" {
+		// 	return false
+		// }
+		// isLocalhost := u.Hostname() == "localhost"
+		// if u.Scheme != "https" && !isLocalhost {
+		// 	return false
+		// }
+		// if strings.EqualFold(u.Host, string(ctx.Request.Host())) {
+		// 	return true
+		// }
+		// return isLocalhost
+		return true // разрешить всё
 	},
 	Error: ErrHandler,
 }
