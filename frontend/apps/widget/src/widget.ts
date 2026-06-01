@@ -31,27 +31,8 @@ export class WebChat extends HTMLElement {
     botStatus: 'escalated',
     messages: [
       greetMessage,
-      {
-        id: 'test-answer',
-        content:
-          'Для инженеров бурения доступно несколько курсов в Томском политехе.\n\n' +
-          '**1. Технологии геонавигации и MLWD**\n' +
-          '* **Длительность:** 5 рабочих дней (40 акад. часов)\n' +
-          '* **Стоимость:** 75 000 руб. без НДС\n' +
-          '* **Сайт:** [Технологии геонавигации и MLWD](https://hw.tpu.ru/courses/mldw/)',
-        type: 'plain',
-        author: 'bot',
-        timestamp: Date.now()
-      },
-      {
-        id: 'test-csat-like',
-        content: 'Был ли мой ответ полезен? Ваша оценка поможет мне стать лучше.',
-        type: 'escalation_2',
-        author: 'bot',
-        timestamp: Date.now(),
-      },
     ],
-    escalation2State: "select_channel",
+    escalation2State: null,
     isOpen: false,
     sessionToken: null,
     conversationUuid: null,
