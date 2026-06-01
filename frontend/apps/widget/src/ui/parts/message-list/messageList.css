@@ -80,6 +80,8 @@
 	outline-offset: 2px;
 }
 
+/* Reserve room for the floating "Начать новый диалог" banner (position:absolute,
+   bottom:5rem) so the last message / CSAT buttons don't slide underneath it. */
 .panel:has(.escalation--visible) .chat__messages {
-	padding-bottom: 2.5rem;
+	padding-bottom: 3.5rem;
 }

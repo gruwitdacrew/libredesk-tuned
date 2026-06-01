@@ -34,6 +34,8 @@ export default defineConfig(({ mode, command }) => {
       }
     },
     root: path.resolve(__dirname, appPath),
+    // Load .env from the frontend/ dir (shared by both apps), not from each app's `root`.
+    envDir: __dirname,
     publicDir: path.resolve(__dirname, 'public'),
     // Separate cache per app to avoid stale/conflicting caches.
     cacheDir: path.resolve(__dirname, `node_modules/.vite-${isWidget ? 'widget' : 'main'}`),
