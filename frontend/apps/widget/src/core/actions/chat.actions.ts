@@ -227,6 +227,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			store.setStore((s) => ({
 				...s,
 				conversationUuid: conversation.uuid,
+				botStatus: conversation.status === "Escalation" || conversation.status === "Closed" ? 'escalated' : 'online' ,
 				messages: [greetMessage, ...sortByTime(messages.map(mapMessage))],
 			}));
 		} catch {

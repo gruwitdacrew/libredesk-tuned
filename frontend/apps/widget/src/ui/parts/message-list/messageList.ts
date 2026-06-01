@@ -18,14 +18,23 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 
 	button.addEventListener('click', () => { handlers.onContactManager(); });
 
-	const state = ctx.store.getStore()
-
-	if(state.botStatus === 'escalated' || state.escalation2State !== null) {
-		button.hidden = true;
+	const setButtonState = (state: WidgetContext['store'])=>{
+		if(state.botStatus === 'escalated' || state.escalation2State !== null) {
+		button.style.opacity = '0.6';
+		button.disabled = true;
+		button.style.pointerEvents = 'none';
 	} else {
-		button.hidden = false;
+		button.disabled = false;
+		button.style.opacity = '1';
+		button.style.pointerEvents = 'all';
+	}
+	return;
 	}
 
+	const button_remover = ctx.store.subscribe(setButtonState);
+
+	ctx.onDestroy(button_remover);
+	
 	chat.append(button);
 
 	const messagesEl = document.createElement('div');
