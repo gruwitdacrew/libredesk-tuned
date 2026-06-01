@@ -9,9 +9,11 @@ export type BotStatus =
 	| 'error'
 	| 'escalated';
 
-export type MessageType = 'plain' | 'escalation_1' | 'escalation_2';
+export type MessageType = 'plain' | 'escalation_1' | 'escalation_2' | 'csat' | 'csat_reason';
 
 export type Escalation2State = null | 'select_channel' | 'telegram' | 'max' | 'email';
+
+export type CsatRating = 1 | 2;
 
 export interface WidgetStore {
 	botStatus: BotStatus;
@@ -30,6 +32,16 @@ export interface Message {
 	type: MessageType;
 	author: 'user' | 'bot';
 	timestamp: number;
+	meta?: {
+		csatUuid?: string;
+		rating?: CsatRating;
+	};
+}
+
+export interface MessageHandlers {
+	onChannelSelect: (ch: 'telegram' | 'max' | 'email') => void;
+	onCsatRate: (csatUuid: string, rating: CsatRating) => void;
+	onCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>;
 }
 
 export interface WidgetContext {

@@ -12,6 +12,8 @@ export interface LibredeskMessage {
 	meta?: {
 		msg_type?: string;
 		is_automated?: boolean;
+		is_csat?: boolean;
+		csat_uuid?: string;
 	};
 	status: string;
 	created_at: string;
@@ -114,6 +116,12 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 	const getConversation = (uuid: string): Promise<ConversationDetailResponse> =>
 		request<ConversationDetailResponse>(`/api/v1/widget/chat/conversations/${uuid}`);
 
+	const submitCsatFeedback = (csatUuid: string, rating: number, feedback: string): Promise<boolean> =>
+		request<boolean>(`/api/v1/csat/${csatUuid}/response`, {
+			method: 'POST',
+			body: JSON.stringify({ rating, feedback }),
+		});
+
 	// Restore session from storage on creation
 	const stored = loadStoredSession();
 	if (stored !== null) {
@@ -128,6 +136,7 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 		sendMessage,
 		getConversations,
 		getConversation,
+		submitCsatFeedback,
 	};
 };
 
@@ -139,4 +148,5 @@ export interface LibredeskApi {
 	sendMessage: (conversationUuid: string, message: string) => Promise<LibredeskMessage>;
 	getConversations: () => Promise<LibredeskConversation[]>;
 	getConversation: (uuid: string) => Promise<ConversationDetailResponse>;
+	submitCsatFeedback: (csatUuid: string, rating: number, feedback: string) => Promise<boolean>;
 }

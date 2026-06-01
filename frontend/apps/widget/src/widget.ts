@@ -28,8 +28,29 @@ export class WebChat extends HTMLElement {
   private ws: LibredeskWs | null = null
 
   private store = createStore<WidgetStore>({
-    botStatus: 'online',
-    messages: [greetMessage],
+    botStatus: 'escalated',
+    messages: [
+      greetMessage,
+      {
+        id: 'test-answer',
+        content:
+          'Для инженеров бурения доступно несколько курсов в Томском политехе.\n\n' +
+          '**1. Технологии геонавигации и MLWD**\n' +
+          '* **Длительность:** 5 рабочих дней (40 акад. часов)\n' +
+          '* **Стоимость:** 75 000 руб. без НДС\n' +
+          '* **Сайт:** [Технологии геонавигации и MLWD](https://hw.tpu.ru/courses/mldw/)',
+        type: 'plain',
+        author: 'bot',
+        timestamp: Date.now()
+      },
+      {
+        id: 'test-csat-like',
+        content: 'Был ли мой ответ полезен? Ваша оценка поможет мне стать лучше.',
+        type: 'escalation_1',
+        author: 'bot',
+        timestamp: Date.now(),
+      },
+    ],
     escalation2State: null,
     isOpen: false,
     sessionToken: null,
@@ -122,8 +143,15 @@ export class WebChat extends HTMLElement {
         chatActions.resetSession()
         void chatActions.initOnLoad()
       },
-      (ch) => {
-        chatActions.selectEscalation2Channel(ch)
+      {
+        onChannelSelect: (ch) => {
+          chatActions.selectEscalation2Channel(ch)
+        },
+        onCsatRate: (uuid, rating) => {
+          chatActions.rateCsat(uuid, rating)
+        },
+        onCsatReason: (uuid, rating, reason) =>
+          chatActions.submitCsatReason(uuid, rating, reason)
       }
     )
 

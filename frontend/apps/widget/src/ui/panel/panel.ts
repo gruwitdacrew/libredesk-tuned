@@ -1,12 +1,12 @@
 import { createChat, createComposer, createEscalationBanner, createHeader, createLoader } from '@parts';
-import type { WidgetContext } from '@types';
+import type { MessageHandlers, WidgetContext } from '@types';
 
 export const createPanel = (
 	ctx: WidgetContext,
 	onClose: () => void,
 	onSend: (text: string) => void,
 	onReset: () => void,
-	onChannelSelect: (ch: 'telegram' | 'max' | 'email') => void,
+	handlers: MessageHandlers,
 ): HTMLElement => {
 	const panel = document.createElement('section');
 
@@ -16,7 +16,7 @@ export const createPanel = (
 	panel.setAttribute('aria-labelledby', 'panel-title');
 
 	const header = createHeader(onClose);
-	const chat = createChat(ctx, onChannelSelect);
+	const chat = createChat(ctx, handlers);
 	const loader = createLoader(ctx);
 	const escalation = createEscalationBanner(ctx, onReset);
 	const composer = createComposer(ctx, onSend);

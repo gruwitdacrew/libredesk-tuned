@@ -1,6 +1,7 @@
 import createIcon from '@icons';
-import type { MessageType } from '@types';
+import type { CsatRating, Message, MessageHandlers } from '@types';
 import { renderContent } from '@utils';
+import { csatReasons } from '../../../core/static/csatMessages';
 
 type Channel = 'telegram' | 'max' | 'email';
 type IconName = 'telegram' | 'max' | 'email';
@@ -78,25 +79,105 @@ const buildEscalation2Btns = (onChannelSelect?: (ch: Channel) => void): HTMLElem
 	return btns;
 };
 
+// Lock a button group after a choice: highlight the picked button, fade the rest,
+// and disable all so the answer can't be changed. Re-rendering never touches these
+// nodes (message list is append-only), so the in-place state persists.
+const lockChoice = (all: HTMLButtonElement[], picked: HTMLButtonElement): void => {
+	for (const b of all) {
+		b.classList.toggle('is-selected', b === picked);
+		b.classList.toggle('is-disabled', b !== picked);
+		b.disabled = true;
+	}
+};
+
+const unlockChoice = (all: HTMLButtonElement[]): void => {
+	for (const b of all) {
+		b.classList.remove('is-selected', 'is-disabled');
+		b.disabled = false;
+	}
+};
+
+// Step 1: rating buttons (👍 Полезно = 2, 👎 Бесполезно = 1).
+const buildCsatRatingBtns = (
+	csatUuid: string,
+	onCsatRate: (csatUuid: string, rating: CsatRating) => void,
+): HTMLElement => {
+	const btns = document.createElement('div');
+	btns.className = 'csat-rating-btns';
+
+	const configs: { label: string; rating: CsatRating; mod: 'up' | 'down' }[] = [
+		{ label: 'Полезно',    rating: 2, mod: 'up' },
+		{ label: 'Бесполезно', rating: 1, mod: 'down' },
+	];
+
+	const all: HTMLButtonElement[] = [];
+
+	for (const { label, rating, mod } of configs) {
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = `csat-rating-btns__btn csat-rating-btns__btn--${mod}`;
+		btn.append(createIcon('thumb'));
+		const span = document.createElement('span');
+		span.textContent = label;
+		btn.append(span);
+		btn.addEventListener('click', () => {
+			lockChoice(all, btn);
+			onCsatRate(csatUuid, rating);
+		});
+		all.push(btn);
+		btns.append(btn);
+	}
+
+	return btns;
+};
+
+// Step 2: reason buttons — the set depends on the rating (positive vs negative).
+const buildCsatReasonBtns = (
+	csatUuid: string,
+	rating: CsatRating,
+	onCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>,
+): HTMLElement => {
+	const btns = document.createElement('div');
+	btns.className = 'csat-reason-btns';
+
+	const all: HTMLButtonElement[] = [];
+
+	for (const reason of csatReasons(rating)) {
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'csat-reason-btns__btn';
+		btn.textContent = reason;
+		btn.addEventListener('click', () => {
+			lockChoice(all, btn);
+			void onCsatReason(csatUuid, rating, reason).catch(() => {
+				// submit failed — re-enable so the user can retry
+				unlockChoice(all);
+			});
+		});
+		all.push(btn);
+		btns.append(btn);
+	}
+
+	return btns;
+};
+
 export const createMessage = (
-	messageContent: string,
+	msg: Message,
 	messageTime: string,
-	type: MessageType,
-	author: 'user' | 'bot',
-	onChannelSelect?: (ch: Channel) => void,
+	handlers: MessageHandlers,
 ): HTMLElement => {
 	const wrapper = document.createElement('div');
 	wrapper.className = 'message-wrapper';
 
 	const message = document.createElement('div');
-	message.className = author === 'bot' ? 'message' : 'message message--user';
+	message.className = msg.author === 'bot' ? 'message' : 'message message--user';
 
 	const messageText = document.createElement('p');
 	messageText.className = 'message__text';
-	if (author === 'bot') {
-		messageText.innerHTML = renderContent(messageContent);
+	if (msg.author === 'bot') {
+		messageText.innerHTML = renderContent(msg.content);
 	} else {
-		messageText.textContent = messageContent;
+		messageText.textContent = msg.content;
 	}
 
 	message.append(messageText);
@@ -109,12 +190,22 @@ export const createMessage = (
 	}
 	wrapper.append(message);
 
-	if (type === 'escalation_1') {
+	if (msg.type === 'escalation_1') {
 		wrapper.classList.add('message-wrapper--escalation');
 		wrapper.append(buildEscalation1Btns());
-	} else if (type === 'escalation_2') {
+	} else if (msg.type === 'escalation_2') {
 		wrapper.classList.add('message-wrapper--escalation');
-		wrapper.append(buildEscalation2Btns(onChannelSelect));
+		wrapper.append(buildEscalation2Btns(handlers.onChannelSelect));
+	} else if (msg.type === 'csat' && msg.meta?.csatUuid !== undefined) {
+		wrapper.classList.add('message-wrapper--csat');
+		wrapper.append(buildCsatRatingBtns(msg.meta.csatUuid, handlers.onCsatRate));
+	} else if (
+		msg.type === 'csat_reason' &&
+		msg.meta?.csatUuid !== undefined &&
+		msg.meta.rating !== undefined
+	) {
+		wrapper.classList.add('message-wrapper--csat');
+		wrapper.append(buildCsatReasonBtns(msg.meta.csatUuid, msg.meta.rating, handlers.onCsatReason));
 	}
 
 	return wrapper;

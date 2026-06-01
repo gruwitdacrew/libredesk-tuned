@@ -1,7 +1,8 @@
 import type { Store } from '@store';
-import type { WidgetStore, Message, MessageType } from '@types';
+import type { WidgetStore, Message, MessageType, CsatRating } from '@types';
 import type { LibredeskApi, LibredeskMessage } from '../api/libredesk';
 import { getEscalation2Message } from '../static/escalation2Messages';
+import { getCsatReasonMessage } from '../static/csatMessages';
 import greetMessage from '../static/greetMessage';
 
 export interface ChatActions {
@@ -13,6 +14,8 @@ export interface ChatActions {
 	setBotError: (isError: boolean) => void;
 	setBotEscalated: (isEscalated: boolean) => void;
 	selectEscalation2Channel: (channel: 'telegram' | 'max' | 'email') => void;
+	rateCsat: (csatUuid: string, rating: CsatRating) => void;
+	submitCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>;
 	resetSession: () => void;
 	initOnLoad: () => Promise<void>;
 }
@@ -21,6 +24,7 @@ const sortByTime = (msgs: Message[]): Message[] =>
 	msgs.slice().sort((a, b) => a.timestamp - b.timestamp);
 
 const resolveType = (msg: LibredeskMessage): MessageType => {
+	if (msg.meta?.is_csat === true) { return 'csat'; }
 	if (msg.meta?.msg_type === 'msg_escalation_1') { return 'escalation_1'; }
 	if (msg.meta?.msg_type === 'msg_escalation_2') { return 'escalation_2'; }
 	return 'plain';
@@ -34,6 +38,9 @@ const mapMessage = (msg: LibredeskMessage): Message => {
 		type,
 		author: msg.author.type === 'agent' ? 'bot' : 'user',
 		timestamp: new Date(msg.created_at).getTime(),
+		...(type === 'csat' && msg.meta?.csat_uuid !== undefined
+			? { meta: { csatUuid: msg.meta.csat_uuid } }
+			: {}),
 	};
 };
 
@@ -131,6 +138,29 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			escalation2State: channel,
 			messages: [...s.messages, getEscalation2Message(channel)],
 		}));
+	};
+
+	// Step 1: user picked a rating. Append the follow-up reason prompt. No request
+	// yet — the single POST happens once a reason is chosen (see submitCsatReason).
+	const rateCsat = (csatUuid: string, rating: CsatRating): void => {
+		store.setStore((s) => ({
+			...s,
+			messages: [...s.messages, getCsatReasonMessage(csatUuid, rating)],
+		}));
+	};
+
+	// Step 2: user picked a reason. Submit rating + reason in a single request.
+	const submitCsatReason = async (
+		csatUuid: string,
+		rating: CsatRating,
+		reason: string,
+	): Promise<void> => {
+		try {
+			await api.submitCsatFeedback(csatUuid, rating, reason);
+		} catch (err) {
+			console.error('[CSAT] submit failed:', err);
+			throw err;
+		}
 	};
 
 	const setBotTyping = (isTyping: boolean): void => {
@@ -231,6 +261,8 @@ const resetSession = (): void => {
 		setBotTyping,
 		setBotEscalated,
 		selectEscalation2Channel,
+		rateCsat,
+		submitCsatReason,
 		resetSession,
 		initOnLoad,
 		setBotThinking,

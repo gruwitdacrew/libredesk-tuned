@@ -1,9 +1,9 @@
 import createIcon from '@icons';
-import type { Message, WidgetContext } from '@types';
+import type { Message, MessageHandlers, WidgetContext } from '@types';
 import { formatTime } from '@utils';
 import { createMessage } from '../message/message';
 
-export const createChat = (ctx: WidgetContext, onChannelSelect: (ch: 'telegram' | 'max' | 'email') => void): HTMLElement => {
+export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLElement => {
 	const chat = document.createElement('div');
 	chat.className = 'chat';
 
@@ -32,7 +32,7 @@ export const createChat = (ctx: WidgetContext, onChannelSelect: (ch: 'telegram' 
 			rendered.count = 0;
 		}
 		for (const msg of messages.slice(rendered.count)) {
-			messagesEl.append(createMessage(msg.content, formatTime(msg.timestamp), msg.type, msg.author, onChannelSelect));
+			messagesEl.append(createMessage(msg, formatTime(msg.timestamp), handlers));
 		}
 		rendered.count = messages.length;
 		messagesEl.scrollTop = messagesEl.scrollHeight;

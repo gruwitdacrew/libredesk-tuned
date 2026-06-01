@@ -118,3 +118,108 @@
 	outline: 2px solid var(--cw-primary);
 	outline-offset: 2px;
 }
+
+/* ── CSAT ───────────────────────────────────────────────────────────── */
+
+.message-wrapper--csat {
+	width: fit-content;
+	max-width: 100%;
+}
+
+/* Shared card-pill base (matches the bot message bubbles): white + soft shadow. */
+.csat-rating-btns__btn,
+.csat-reason-btns__btn {
+	box-sizing: border-box;
+	min-height: 34px;
+	padding: 8px 14px;
+	border: 1px solid transparent;
+	border-radius: 16px;
+	background: var(--cw-white);
+	box-shadow: var(--cw-shadow);
+	color: var(--cw-primary);
+	font-family: inherit;
+	font-size: 0.875rem;
+	cursor: pointer;
+	transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out, opacity 0.15s ease-in-out;
+}
+
+.csat-rating-btns__btn:hover:not(:disabled),
+.csat-reason-btns__btn:hover:not(:disabled) {
+	background-color: var(--cw-secondary);
+	border-color: var(--cw-primary);
+}
+
+.csat-rating-btns__btn:focus-visible,
+.csat-reason-btns__btn:focus-visible {
+	outline: 2px solid var(--cw-primary);
+	outline-offset: 2px;
+}
+
+.csat-rating-btns__btn:disabled,
+.csat-reason-btns__btn:disabled {
+	cursor: default;
+}
+
+/* Step 1: rating row (👍 Полезно / 👎 Бесполезно) */
+.csat-rating-btns {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.csat-rating-btns__btn {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+
+	svg {
+		width: 1.125rem;
+		height: 1.125rem;
+		flex-shrink: 0;
+	}
+}
+
+/* thumbs-down reuses the thumb icon, flipped vertically */
+.csat-rating-btns__btn--down svg {
+	transform: scaleY(-1);
+}
+
+/* picked rating: filled accent */
+.csat-rating-btns__btn.is-selected {
+	background: var(--cw-primary);
+	color: var(--cw-white);
+}
+
+/* the other rating after a choice: dimmed + flat */
+.csat-rating-btns__btn.is-disabled {
+	opacity: 0.5;
+	box-shadow: none;
+}
+
+/* Step 2: reason pills (vertical stack, fixed-width cards) */
+.csat-reason-btns {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+
+.csat-reason-btns__btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 210px;
+	max-width: 100%;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	white-space: nowrap;
+	text-align: center;
+}
+
+/* picked reason: lavender fill + accent border (per design spec) */
+.csat-reason-btns__btn.is-selected {
+	background: var(--cw-secondary);
+	border-color: var(--cw-primary);
+}

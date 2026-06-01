@@ -1,0 +1,32 @@
+import type { CsatRating, Message } from '@types';
+
+// Reason options shown after the user rates the answer. The set depends on the
+// rating: positive reasons for "Полезно" (2), negative reasons for "Бесполезно" (1).
+export const POSITIVE_REASONS: readonly string[] = [
+	'Точно отвечает на вопрос',
+	'Понятно и доступно',
+	'Быстрый ответ',
+];
+
+export const NEGATIVE_REASONS: readonly string[] = [
+	'Ответ неточный или не по теме',
+	'Не хватает информации',
+	'Слишком долгий ответ',
+];
+
+export const csatReasons = (rating: CsatRating): readonly string[] =>
+	rating === 2 ? POSITIVE_REASONS : NEGATIVE_REASONS;
+
+// Client-generated follow-up that prompts for a reason. The backend can't send
+// this — it doesn't learn the rating until the reason is submitted.
+export const getCsatReasonMessage = (csatUuid: string, rating: CsatRating): Message => ({
+	id: `csat-reason-${csatUuid}`,
+	content:
+		rating === 2
+			? 'Спасибо, что оценили ответ!\n\nЧто понравилось?'
+			: 'Спасибо, что оценили ответ!\n\nЧто не так?',
+	type: 'csat_reason',
+	author: 'bot',
+	timestamp: Date.now(),
+	meta: { csatUuid, rating },
+});
