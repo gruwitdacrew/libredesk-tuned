@@ -18,6 +18,14 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 
 	button.addEventListener('click', () => { handlers.onContactManager(); });
 
+	const state = ctx.store.getStore()
+
+	if(state.botStatus === 'escalated' || state.escalation2State !== null) {
+		button.hidden = true;
+	} else {
+		button.hidden = false;
+	}
+
 	chat.append(button);
 
 	const messagesEl = document.createElement('div');
