@@ -1,4 +1,4 @@
-import { createChat, createComposer, createEscalationBanner, createHeader, createLoader } from '@parts';
+import { createChat, createComposer, createHeader, createLoader } from '@parts';
 import type { MessageHandlers, WidgetContext } from '@types';
 
 export const createPanel = (
@@ -18,10 +18,9 @@ export const createPanel = (
 	const header = createHeader(onClose);
 	const chat = createChat(ctx, handlers);
 	const loader = createLoader(ctx);
-	const escalation = createEscalationBanner(ctx, onReset);
-	const composer = createComposer(ctx, onSend);
+	const composer = createComposer(ctx, onSend, onReset);
 
-	panel.append(header, chat, loader, escalation, composer);
+	panel.append(header, chat, loader, composer);
 
 	return panel;
 };

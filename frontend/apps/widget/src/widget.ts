@@ -28,11 +28,19 @@ export class WebChat extends HTMLElement {
   private ws: LibredeskWs | null = null
 
   private store = createStore<WidgetStore>({
-    botStatus: 'online',
+    botStatus: 'escalated',
     messages: [
       greetMessage,
+      {
+        id: '123',
+        content: 'adsasddsaads\ndasdsadasads',
+        type: 'escalation_2',
+        author: 'bot',
+        timestamp: Date.now()
+      }
     ],
-    escalation2State: null,
+    escalation2State: 'select_channel',
+    escalationContactsSent: false,
     isOpen: false,
     sessionToken: null,
     conversationUuid: null,
@@ -103,6 +111,16 @@ export class WebChat extends HTMLElement {
       )
     )
 
+    // Persist the escalation choice (channel + contacts-sent lock) so it survives
+    // reloads. resetSession clears the key explicitly. Selector subscriptions only
+    // fire on actual change, so this never spams localStorage.
+    const persistEscalation = (): void => {
+      const s = this.ctx.store.getStore()
+      api.storeEscalation({ state: s.escalation2State, sent: s.escalationContactsSent })
+    }
+    this.ctx.onDestroy(this.ctx.store.subscribe((s) => s.escalation2State, persistEscalation))
+    this.ctx.onDestroy(this.ctx.store.subscribe((s) => s.escalationContactsSent, persistEscalation))
+
     // UI
     const uiActions = createUIActions(this.ctx.store)
 
@@ -153,6 +171,18 @@ export class WebChat extends HTMLElement {
         }
       )
     )
+
+    // Toggle the escalation layout class on the panel (adds breathing room above
+    // the composer). Driven here, where `panel` is in scope, so it applies on the
+    // initial render too — including a reload straight into an escalated state.
+    const syncEscalationClass = (): void => {
+      const s = this.ctx.store.getStore()
+      const escalating = s.botStatus === 'escalated' || s.escalation2State !== null
+      panel.classList.toggle('panel--escalation', escalating)
+    }
+    syncEscalationClass()
+    this.ctx.onDestroy(this.ctx.store.subscribe((s) => s.botStatus, syncEscalationClass))
+    this.ctx.onDestroy(this.ctx.store.subscribe((s) => s.escalation2State, syncEscalationClass))
 
     this.shadow.append(launcher, panel)
 

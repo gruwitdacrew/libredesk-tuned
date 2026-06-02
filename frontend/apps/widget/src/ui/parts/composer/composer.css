@@ -15,6 +15,68 @@
 	}
 }
 
+.composer.is-hidden,
+.composer__counter.is-hidden {
+	display: none;
+}
+
+/* "Диалог завершен" — shown in place of the input when the dialog is finished. */
+.composer__done {
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	row-gap: 0.75rem;
+}
+
+.composer__done--visible {
+	display: flex;
+}
+
+.composer__done-text {
+	font-size: 0.875rem;
+	line-height: 1.125rem;
+	font-weight: 500;
+	color: var(--cw-primary);
+	text-align: center;
+}
+
+.composer__restart {
+	display: flex;
+	align-items: center;
+	column-gap: 0.5rem;
+	width: 100%;
+	height: 34px;
+	justify-content: center;
+	padding: 0 1.25rem;
+	border: 1px solid var(--cw-border-color);
+	border-radius: 1rem;
+	background-color: var(--cw-white);
+	color: var(--cw-primary);
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1.125rem;
+	box-shadow: var(--cw-shadow);
+	transition:
+		background-color 0.15s ease-in-out,
+		color 0.15s ease-in-out;
+
+	svg {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+	}
+}
+
+.composer__restart:hover {
+	background-color: var(--cw-primary);
+	color: var(--cw-white);
+}
+
+.composer__restart:focus-visible {
+	outline: 2px solid var(--cw-primary);
+	outline-offset: 2px;
+}
+
 .composer {
 	position: relative;
 }

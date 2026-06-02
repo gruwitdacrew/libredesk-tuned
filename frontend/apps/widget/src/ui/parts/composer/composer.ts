@@ -5,7 +5,11 @@ const MAX_LENGTH = 4000;
 const WARN_THRESHOLD = MAX_LENGTH * 0.95;
 const VISIBLE_THRESHOLD = MAX_LENGTH * 0.8;
 
-export const createComposer = (ctx: WidgetContext, onSend: (text: string) => void): HTMLElement => {
+export const createComposer = (
+	ctx: WidgetContext,
+	onSend: (text: string) => void,
+	onReset: () => void,
+): HTMLElement => {
 	const wrapper = document.createElement('div');
 	wrapper.className = 'composer__wrapper';
 
@@ -61,6 +65,25 @@ export const createComposer = (ctx: WidgetContext, onSend: (text: string) => voi
 
 	buttonSend.disabled = true;
 
+	// "Диалог завершен" view — replaces the input once the conversation is finished.
+	const done = document.createElement('div');
+	done.className = 'composer__done';
+
+	const doneText = document.createElement('p');
+	doneText.className = 'composer__done-text';
+	doneText.textContent = 'Диалог завершен';
+
+	const restartBtn = document.createElement('button');
+	restartBtn.type = 'button';
+	restartBtn.className = 'composer__restart';
+	restartBtn.append(createIcon('addNew'));
+	const restartLabel = document.createElement('span');
+	restartLabel.textContent = 'Начать новый диалог';
+	restartBtn.append(restartLabel);
+	restartBtn.addEventListener('click', onReset);
+
+	done.append(doneText, restartBtn);
+
 	const setLocked = (locked: boolean): void => {
 		textarea.disabled = locked;
 		if (locked) {
@@ -70,17 +93,23 @@ export const createComposer = (ctx: WidgetContext, onSend: (text: string) => voi
 		}
 	};
 
-	const syncLocked = (): void => {
+	const sync = (): void => {
 		const s = ctx.store.getStore();
-		const escalatedNoChannel = s.botStatus === 'escalated' && s.escalation2State === null;
-		setLocked(s.isAwaitingReply || s.escalation2State === 'select_channel' || escalatedNoChannel);
+		// Dialog finished (escalation_1 closed, or escalation_2 closed after contacts).
+		const completed = s.botStatus === 'escalated' && s.escalation2State === null;
+
+		composer.classList.toggle('is-hidden', completed);
+		counter.classList.toggle('is-hidden', completed);
+		done.classList.toggle('composer__done--visible', completed);
+
+		setLocked(s.isAwaitingReply || s.escalation2State === 'select_channel');
 	};
 
-	syncLocked();
-	ctx.onDestroy(ctx.store.subscribe((s) => s, () => { syncLocked(); }));
+	sync();
+	ctx.onDestroy(ctx.store.subscribe((s) => s, () => { sync(); }));
 
 	composer.append(textarea, buttonSend);
-	wrapper.append(composer, counter);
+	wrapper.append(composer, counter, done);
 
 	return wrapper;
 };

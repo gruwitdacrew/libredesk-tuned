@@ -1,5 +1,3 @@
-import type { Message } from '@types';
-
 type Channel = 'telegram' | 'max' | 'email';
 
 const CONTENT: Record<Channel, string> = {
@@ -11,10 +9,5 @@ const CONTENT: Record<Channel, string> = {
 		'Укажите ваш никнейм в MAX\n\nАлександра свяжется с вами в MAX',
 };
 
-export const getEscalation2Message = (channel: Channel): Message => ({
-	id: `esc2-contact-${String(Date.now())}`,
-	content: CONTENT[channel],
-	type: 'plain',
-	author: 'bot',
-	timestamp: Date.now(),
-});
+// Inline prompt shown inside the escalation_2 bubble for the selected channel.
+export const getEscalationPrompt = (channel: Channel): string => CONTENT[channel];

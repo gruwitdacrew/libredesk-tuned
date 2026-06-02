@@ -126,6 +126,41 @@
 	outline-offset: 2px;
 }
 
+/* escalation_2: selected channel + locked (after contacts sent) states */
+.escalation-btns__btn.is-selected {
+	background: var(--cw-primary);
+	border-color: var(--cw-primary);
+	color: var(--cw-white);
+}
+
+.escalation-btns__btn.is-disabled {
+	opacity: 0.5;
+}
+
+.escalation-btns__btn:disabled {
+	cursor: default;
+}
+
+/* escalation_2: inline prompt that updates in place on channel switch.
+   Styled as a bot message bubble (white, soft shadow, tail bottom-left). */
+.escalation2__prompt {
+	display: none;
+	width: fit-content;
+	max-width: 100%;
+	margin-top: 0.5rem;
+	padding: 0.5rem 1rem;
+	background-color: var(--cw-white);
+	border-radius: 1rem 1rem 1rem 0;
+	box-shadow: var(--cw-shadow);
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	color: var(--cw-text-color);
+}
+
+.escalation2__prompt--visible {
+	display: block;
+}
+
 /* ── CSAT ───────────────────────────────────────────────────────────── */
 
 .message-wrapper--csat {

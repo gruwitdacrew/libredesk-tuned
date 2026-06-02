@@ -1,7 +1,8 @@
 import createIcon from '@icons';
-import type { CsatRating, Message, MessageHandlers } from '@types';
+import type { CsatRating, Message, MessageHandlers, WidgetContext } from '@types';
 import { renderContent } from '@utils';
 import { csatReasons } from '../../../core/static/csatMessages';
+import { getEscalationPrompt } from '../../../core/static/escalation2Messages';
 
 type Channel = 'telegram' | 'max' | 'email';
 type IconName = 'telegram' | 'max' | 'email';
@@ -56,15 +57,48 @@ const buildEscalation1Btns = (): HTMLElement => {
 	return btns;
 };
 
-const buildEscalation2Btns = (onChannelSelect?: (ch: Channel) => void): HTMLElement => {
+// escalation_2 bubble: channel buttons + an inline prompt that updates in place when
+// the user switches channel (no new message bubble). State is read from the store at
+// creation (so a restored/locked choice renders correctly) and a single guarded
+// subscription locks the buttons once contacts have been sent.
+const buildEscalation2Btns = (ctx: WidgetContext, onChannelSelect: (ch: Channel) => void): HTMLElement => {
+	const container = document.createElement('div');
+	container.className = 'escalation2';
+
 	const btns = document.createElement('div');
 	btns.className = 'escalation-btns';
+	container.append(btns);
+
+	const prompt = document.createElement('p');
+	prompt.className = 'escalation2__prompt';
+	container.append(prompt);
 
 	const configs = [
 		{ icon: 'telegram' as IconName, label: 'Telegram', mod: 'tg',   ch: 'telegram' as Channel },
 		{ icon: 'max'      as IconName, label: 'MAX',       mod: '1984', ch: 'max'      as Channel },
 		{ icon: 'email'    as IconName, label: 'Почта',     mod: 'email', ch: 'email'   as Channel },
 	];
+
+	const byChannel = new Map<Channel, HTMLButtonElement>();
+	const all: HTMLButtonElement[] = [];
+
+	const showPrompt = (ch: Channel): void => {
+		prompt.textContent = getEscalationPrompt(ch);
+		prompt.classList.add('escalation2__prompt--visible');
+	};
+
+	const selectBtn = (picked: HTMLButtonElement): void => {
+		for (const b of all) {
+			b.classList.toggle('is-selected', b === picked);
+		}
+	};
+
+	const lock = (): void => {
+		for (const b of all) {
+			b.classList.toggle('is-disabled', !b.classList.contains('is-selected'));
+			b.disabled = true;
+		}
+	};
 
 	for (const { icon, label, mod, ch } of configs) {
 		const btn = document.createElement('button');
@@ -74,11 +108,44 @@ const buildEscalation2Btns = (onChannelSelect?: (ch: Channel) => void): HTMLElem
 		const span = document.createElement('span');
 		span.textContent = label;
 		btn.append(span);
-		btn.addEventListener('click', () => { onChannelSelect?.(ch); });
+		btn.addEventListener('click', () => {
+			selectBtn(btn);
+			showPrompt(ch);
+			onChannelSelect(ch);
+		});
+		byChannel.set(ch, btn);
+		all.push(btn);
 		btns.append(btn);
 	}
 
-	return btns;
+	// Reflect persisted/restored state at creation.
+	const initial = ctx.store.getStore();
+	const initialChannel = initial.escalation2State;
+	if (initialChannel === 'telegram' || initialChannel === 'max' || initialChannel === 'email') {
+		const btn = byChannel.get(initialChannel);
+		if (btn !== undefined) {
+			selectBtn(btn);
+			showPrompt(initialChannel);
+		}
+	}
+	if (initial.escalationContactsSent) {
+		lock();
+	}
+
+	// Lock the group once contacts are sent; guard against the destroyed (cleared) list.
+	ctx.onDestroy(ctx.store.subscribe(
+		(s) => s.escalationContactsSent,
+		(sent) => {
+			if (!container.isConnected) {
+				return;
+			}
+			if (sent) {
+				lock();
+			}
+		},
+	));
+
+	return container;
 };
 
 // Lock a button group after a choice: highlight the picked button, fade the rest,
@@ -164,6 +231,7 @@ const buildCsatReasonBtns = (
 };
 
 export const createMessage = (
+	ctx: WidgetContext,
 	msg: Message,
 	messageTime: string,
 	handlers: MessageHandlers,
@@ -197,7 +265,7 @@ export const createMessage = (
 		wrapper.append(buildEscalation1Btns());
 	} else if (msg.type === 'escalation_2') {
 		wrapper.classList.add('message-wrapper--escalation');
-		wrapper.append(buildEscalation2Btns(handlers.onChannelSelect));
+		wrapper.append(buildEscalation2Btns(ctx, handlers.onChannelSelect));
 	} else if (msg.type === 'csat' && msg.meta?.csatUuid !== undefined) {
 		wrapper.classList.add('message-wrapper--csat');
 		wrapper.append(buildCsatRatingBtns(msg.meta.csatUuid, handlers.onCsatRate));
