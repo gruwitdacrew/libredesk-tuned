@@ -25,6 +25,20 @@
 	margin-top: auto;
 }
 
+/* During escalation the composer shows either the channel-select prompt or the
+   "Диалог завершен" block; add 24px to the chat's bottom reserve so the last
+   message / inline buttons keep a clear gap above the composer. Covers both
+   states via the panel state class set in composer sync(). */
+.panel--escalation .chat {
+	padding-bottom: calc(5.5rem + 24px);
+}
+
+@media (max-width: 480px) {
+	.panel--escalation .chat {
+		padding-bottom: calc(5.5rem + 24px + env(safe-area-inset-bottom));
+	}
+}
+
 @media (max-width: 480px) {
 	.chat {
 		flex: 1;
@@ -89,10 +103,4 @@
 .chat__contact:focus-visible {
 	outline: 2px solid var(--cw-primary);
 	outline-offset: 2px;
-}
-
-/* Reserve room for the floating "Начать новый диалог" banner (position:absolute,
-   bottom:5rem) so the last message / CSAT buttons don't slide underneath it. */
-.panel:has(.escalation--visible) .chat__messages {
-	padding-bottom: 3.5rem;
 }

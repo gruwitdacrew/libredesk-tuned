@@ -1,4 +1,17 @@
-import type { LibredeskConfig } from '@types';
+import type { Escalation2State, LibredeskConfig } from '@types';
+
+export interface EscalationPersisted {
+	state: Escalation2State;
+	sent: boolean;
+}
+
+const ESCALATION_STATES: readonly Escalation2State[] = [
+	null,
+	'select_channel',
+	'telegram',
+	'max',
+	'email',
+];
 
 export interface LibredeskMessage {
 	uuid: string;
@@ -36,6 +49,7 @@ interface ConversationDetailResponse {
 }
 
 const SESSION_KEY_PREFIX = 'libredesk-session-';
+const ESCALATION_KEY_PREFIX = 'libredesk-escalation-';
 
 export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 	let sessionToken: string | null = null;
@@ -63,6 +77,40 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 		sessionToken = null;
 		try {
 			localStorage.removeItem(`${SESSION_KEY_PREFIX}${config.inboxId}`);
+		} catch {
+			// storage unavailable
+		}
+	};
+
+	const escalationKey = (): string => `${ESCALATION_KEY_PREFIX}${config.inboxId}`;
+
+	const loadEscalation = (): EscalationPersisted | null => {
+		try {
+			const raw = localStorage.getItem(escalationKey());
+			if (raw === null) {
+				return null;
+			}
+			const parsed = JSON.parse(raw) as { state?: unknown; sent?: unknown };
+			const state = ESCALATION_STATES.includes(parsed.state as Escalation2State)
+				? (parsed.state as Escalation2State)
+				: null;
+			return { state, sent: parsed.sent === true };
+		} catch {
+			return null;
+		}
+	};
+
+	const storeEscalation = (value: EscalationPersisted): void => {
+		try {
+			localStorage.setItem(escalationKey(), JSON.stringify(value));
+		} catch {
+			// storage unavailable
+		}
+	};
+
+	const clearEscalation = (): void => {
+		try {
+			localStorage.removeItem(escalationKey());
 		} catch {
 			// storage unavailable
 		}
@@ -137,6 +185,9 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 		getConversations,
 		getConversation,
 		submitCsatFeedback,
+		loadEscalation,
+		storeEscalation,
+		clearEscalation,
 	};
 };
 
@@ -149,4 +200,7 @@ export interface LibredeskApi {
 	getConversations: () => Promise<LibredeskConversation[]>;
 	getConversation: (uuid: string) => Promise<ConversationDetailResponse>;
 	submitCsatFeedback: (csatUuid: string, rating: number, feedback: string) => Promise<boolean>;
+	loadEscalation: () => EscalationPersisted | null;
+	storeEscalation: (value: EscalationPersisted) => void;
+	clearEscalation: () => void;
 }

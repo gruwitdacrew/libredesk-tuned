@@ -1,7 +1,6 @@
 import type { Store } from '@store';
 import type { WidgetStore, Message, MessageType, CsatRating } from '@types';
 import type { LibredeskApi, LibredeskMessage } from '../api/libredesk';
-import { getEscalation2Message } from '../static/escalation2Messages';
 import { getCsatReasonMessage } from '../static/csatMessages';
 import greetMessage from '../static/greetMessage';
 
@@ -58,10 +57,10 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}
 
 		const { escalation2State } = store.getStore();
-		const prefix =
-			escalation2State !== null && escalation2State !== 'select_channel'
-				? CHANNEL_PREFIXES[escalation2State]
-				: '';
+		// A send while a channel is chosen (not null / not 'select_channel') is the
+		// user submitting their contacts → lock the channel buttons afterwards.
+		const isContactsSubmit = escalation2State !== null && escalation2State !== 'select_channel';
+		const prefix = isContactsSubmit ? CHANNEL_PREFIXES[escalation2State] : '';
 		const content = prefix.length > 0 ? `${prefix}${trimmed}` : trimmed;
 
 		// Optimistic: render user message immediately
@@ -78,6 +77,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			messages: [...s.messages, optimistic],
 			isInitializing: s.conversationUuid === null,
 			isAwaitingReply: true,
+			escalationContactsSent: isContactsSubmit ? true : s.escalationContactsSent,
 		}));
 
 		try {
@@ -107,7 +107,13 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			}
 		} catch (err) {
 			console.error('[Chat] send failed:', err);
-			store.setStore((s) => ({ ...s, isInitializing: false, isAwaitingReply: false }));
+			store.setStore((s) => ({
+				...s,
+				isInitializing: false,
+				isAwaitingReply: false,
+				// Roll back the lock if the contacts submission didn't go through.
+				escalationContactsSent: isContactsSubmit ? false : s.escalationContactsSent,
+			}));
 		}
 	};
 
@@ -132,11 +138,12 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}));
 	};
 
+	// Selecting/switching a channel only updates state — the prompt is rendered inline
+	// in the escalation_2 bubble and updated in place, so no new message is appended.
 	const selectEscalation2Channel = (channel: 'telegram' | 'max' | 'email'): void => {
 		store.setStore((s) => ({
 			...s,
 			escalation2State: channel,
-			messages: [...s.messages, getEscalation2Message(channel)],
 		}));
 	};
 
@@ -224,10 +231,16 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 
 			const { conversation, messages } = await api.getConversation(latest.uuid);
 
+			// Restore the persisted escalation choice so the channel bubble re-renders
+			// with the right selected/locked state and the send-prefix is preserved.
+			const escalation = api.loadEscalation();
+
 			store.setStore((s) => ({
 				...s,
 				conversationUuid: conversation.uuid,
 				botStatus: conversation.status === "Escalation" || conversation.status === "Closed" ? 'escalated' : 'online' ,
+				escalation2State: escalation?.state ?? s.escalation2State,
+				escalationContactsSent: escalation?.sent ?? s.escalationContactsSent,
 				messages: [greetMessage, ...sortByTime(messages.map(mapMessage))],
 			}));
 		} catch {
@@ -238,6 +251,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 
 const resetSession = (): void => {
 		api.clearSession();
+		api.clearEscalation();
 		store.setStore((s) => ({
 			botStatus: 'online',
 			messages: [greetMessage],
@@ -247,6 +261,7 @@ const resetSession = (): void => {
 			isInitializing: false,
 			isAwaitingReply: false,
 			escalation2State: null,
+			escalationContactsSent: false,
 		}));
 	};
 

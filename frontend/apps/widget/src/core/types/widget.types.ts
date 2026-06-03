@@ -24,6 +24,9 @@ export interface WidgetStore {
 	isInitializing: boolean;
 	isAwaitingReply: boolean;
 	escalation2State: Escalation2State;
+	// True once the user has sent their contacts for the chosen channel — locks the
+	// escalation_2 channel buttons until "Начать новый диалог". Persisted across reloads.
+	escalationContactsSent: boolean;
 }
 
 export interface Message {

@@ -1,5 +1,5 @@
 import createIcon from '@icons';
-import type { Message, MessageHandlers, WidgetContext } from '@types';
+import type { Message, MessageHandlers, WidgetContext, WidgetStore } from '@types';
 import { formatTime } from '@utils';
 import { createMessage } from '../message/message';
 
@@ -18,23 +18,18 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 
 	button.addEventListener('click', () => { handlers.onContactManager(); });
 
-	const setButtonState = (state: WidgetContext['store'])=>{
-		if(state.botStatus === 'escalated' || state.escalation2State !== null) {
-		button.style.opacity = '0.6';
-		button.disabled = true;
-		button.style.pointerEvents = 'none';
-	} else {
-		button.disabled = false;
-		button.style.opacity = '1';
-		button.style.pointerEvents = 'all';
-	}
-	return;
-	}
+	// Disable "Связаться с руководителем" once a dialog is escalated or an
+	// escalation_2 channel flow is in progress.
+	const setButtonState = (state: Readonly<WidgetStore>): void => {
+		const locked = state.botStatus === 'escalated' || state.escalation2State !== null;
+		button.disabled = locked;
+		button.style.opacity = locked ? '0.6' : '1';
+		button.style.pointerEvents = locked ? 'none' : 'auto';
+	};
 
-	const button_remover = ctx.store.subscribe(setButtonState);
+	setButtonState(ctx.store.getStore());
+	ctx.onDestroy(ctx.store.subscribe(setButtonState));
 
-	ctx.onDestroy(button_remover);
-	
 	chat.append(button);
 
 	const messagesEl = document.createElement('div');
@@ -51,7 +46,7 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 			rendered.count = 0;
 		}
 		for (const msg of messages.slice(rendered.count)) {
-			messagesEl.append(createMessage(msg, formatTime(msg.timestamp), handlers));
+			messagesEl.append(createMessage(ctx, msg, formatTime(msg.timestamp), handlers));
 		}
 		rendered.count = messages.length;
 		messagesEl.scrollTop = messagesEl.scrollHeight;
