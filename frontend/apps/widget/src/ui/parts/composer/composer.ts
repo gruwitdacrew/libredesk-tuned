@@ -5,6 +5,13 @@ const MAX_LENGTH = 4000;
 const WARN_THRESHOLD = MAX_LENGTH * 0.95;
 const VISIBLE_THRESHOLD = MAX_LENGTH * 0.8;
 
+const DEFAULT_PLACEHOLDER = 'Напишите сообщение...';
+const CHANNEL_PLACEHOLDERS: Record<'telegram' | 'max' | 'email', string> = {
+	telegram: 'Введите ваш никнейм в Telegram',
+	max: 'Введите ваш никнейм в MAX',
+	email: 'Введите вашу почту',
+};
+
 export const createComposer = (
 	ctx: WidgetContext,
 	onSend: (text: string) => void,
@@ -18,7 +25,7 @@ export const createComposer = (
 
 	const textarea = document.createElement('textarea');
 	textarea.className = 'composer__input';
-	textarea.placeholder = 'Напишите сообщение...';
+	textarea.placeholder = DEFAULT_PLACEHOLDER;
 	textarea.setAttribute('aria-label', 'Введите сообщение');
 	textarea.maxLength = MAX_LENGTH;
 
@@ -102,7 +109,12 @@ export const createComposer = (
 		counter.classList.toggle('is-hidden', completed);
 		done.classList.toggle('composer__done--visible', completed);
 
-		setLocked(s.isAwaitingReply || s.escalation2State === 'select_channel');
+		const ch = s.escalation2State;
+		textarea.placeholder = ch === 'telegram' || ch === 'max' || ch === 'email'
+			? CHANNEL_PLACEHOLDERS[ch]
+			: DEFAULT_PLACEHOLDER;
+
+		setLocked(s.escalation2State === 'select_channel');
 	};
 
 	sync();
