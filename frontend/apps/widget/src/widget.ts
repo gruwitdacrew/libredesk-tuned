@@ -28,18 +28,11 @@ export class WebChat extends HTMLElement {
   private ws: LibredeskWs | null = null
 
   private store = createStore<WidgetStore>({
-    botStatus: 'escalated',
+    botStatus: 'online',
     messages: [
       greetMessage,
-      {
-        id: '123',
-        content: 'lllll',
-        type: 'escalation_2',
-        author: 'bot',
-        timestamp: 0
-      }
     ],
-    escalation2State: 'telegram',
+    escalation2State: null,
     escalationContactsSent: false,
     isOpen: false,
     sessionToken: null,
