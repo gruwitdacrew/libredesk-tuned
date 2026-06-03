@@ -295,6 +295,8 @@ func initConversations(
 	csat *csat.Manager,
 	automationEngine *automation.Engine,
 	template *tmpl.Manager,
+	aiReplyManager *ai.ReplyManager,
+	aiCacheManager *ai.CacheManager,
 	webhook *webhook.Manager,
 	dispatcher *notifier.Dispatcher,
 ) *conversation.Manager {
@@ -303,14 +305,13 @@ func initConversations(
 		continuityConfig.BatchCheckInterval = ko.MustDuration("conversation.continuity_scan_interval")
 	}
 
-	c, err := conversation.New(hub, i18n, sla, status, priority, inboxStore, userStore, teamStore, mediaStore, settings, csat, automationEngine, template, webhook, dispatcher, conversation.Opts{
+	c, err := conversation.New(hub, i18n, sla, status, priority, inboxStore, userStore, teamStore, mediaStore, settings, csat, automationEngine, template, aiReplyManager, aiCacheManager, webhook, dispatcher, conversation.Opts{
 		DB:                       db,
 		Lo:                       initLogger("conversation_manager"),
 		OutgoingMessageQueueSize: ko.MustInt("message.outgoing_queue_size"),
 		IncomingMessageQueueSize: ko.MustInt("message.incoming_queue_size"),
 		ContinuityConfig:         continuityConfig,
 		SubjectRefFormat:         ko.String("conversation.subject_ref_format"),
-		Timeout:                  ko.MustDuration("conversation.timeout"),
 	})
 	if err != nil {
 		log.Fatalf("error initializing conversation manager: %v", err)
@@ -443,6 +444,22 @@ func initTemplate(db *sqlx.DB, fs stuffbin.FileSystem, consts *constants, i18n *
 		log.Fatalf("error initializing template manager: %v", err)
 	}
 	return m
+}
+
+// initAIReplyManager инициализирует AI менеджер с очередью через Redis
+func initAIReplyManager(rd *redis.Client) *ai.ReplyManager {
+
+	lo := initLogger("ai_reply_manager")
+
+	return ai.NewReplyManager(rd, ko.Int("ai.reply.workers"), ko.Duration("ai.reply.timeout"), lo)
+}
+
+// initAICacheManager инициализирует AI менеджер с кэшем через Redis
+func initAICacheManager(rd *redis.Client) *ai.CacheManager {
+
+	lo := initLogger("ai_cache_manager")
+
+	return ai.NewCacheManager(rd, lo, ko.Duration("ai.cache.ttl"), ko.String("ai.cache.prefix"))
 }
 
 // getTmplFuncs returns the template functions.

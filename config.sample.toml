@@ -135,7 +135,14 @@ unsnooze_interval = "5m"
 draft_retention_period = "360h"
 # How often to check for offline conversations in database to send continuity emails
 continuity_scan_interval = "5m"
-timeout = "30s"
+
+[ai.reply]
+timeout = "60s"
+workers = 5
+
+[ai.cache]
+ttl = "1h"
+prefix = "ai_reply"
 
 [sla]
 # How often to evaluate SLA compliance for conversations

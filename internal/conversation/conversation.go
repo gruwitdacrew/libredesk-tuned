@@ -2,7 +2,6 @@
 package conversation
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"embed"
@@ -11,13 +10,14 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
-	"net/http"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/abhinavxd/libredesk/internal/ai"
+	aimodels "github.com/abhinavxd/libredesk/internal/ai/models"
 	authzmodels "github.com/abhinavxd/libredesk/internal/authz/models"
 	"github.com/abhinavxd/libredesk/internal/automation"
 	amodels "github.com/abhinavxd/libredesk/internal/automation/models"
@@ -81,6 +81,8 @@ type Manager struct {
 	automation                 *automation.Engine
 	wsHub                      *ws.Hub
 	template                   *template.Manager
+	aiReply                    *ai.ReplyManager
+	aiCache                    *ai.CacheManager
 	incomingMessageQueue       chan models.IncomingMessage
 	outgoingMessageQueue       chan models.Message
 	outgoingProcessingMessages sync.Map
@@ -89,7 +91,6 @@ type Manager struct {
 	wg                         sync.WaitGroup
 	continuityConfig           ContinuityConfig
 	subjectRefFormat           string
-	httpClient                 *http.Client
 }
 
 // WidgetConversationView represents the conversation data for widget clients
@@ -107,77 +108,6 @@ type WidgetConversationResponse struct {
 	Messages              []models.ChatMessage    `json:"messages"`
 	BusinessHoursID       *int                    `json:"business_hours_id,omitempty"`
 	WorkingHoursUTCOffset *int                    `json:"working_hours_utc_offset,omitempty"`
-}
-
-// MLResponse представляет ответ от ML-модели
-type MLResponse struct {
-	Answer        string       `json:"answer"`
-	Sources       []Source     `json:"sources"`   // ← массив объектов
-	Citations     []Citation   `json:"citations"` // ← массив объектов
-	Confidence    string       `json:"confidence"`
-	RefusalReason *string      `json:"refusal_reason"`
-	Route         string       `json:"route"`
-	RequestID     string       `json:"request_id"`
-	QueryRewrite  QueryRewrite `json:"query_rewrite"`
-	Metadata      MLMetadata   `json:"metadata"`
-}
-
-// Source представляет источник информации
-type Source struct {
-	ID              string      `json:"id"`
-	DocID           string      `json:"doc_id"`
-	SourceName      string      `json:"source_name"`
-	Title           *string     `json:"title"`
-	URL             *string     `json:"url"`
-	ChunkID         *string     `json:"chunk_id"`
-	LineStart       int         `json:"line_start"`
-	LineEnd         int         `json:"line_end"`
-	Snippet         string      `json:"snippet"`
-	Quote           string      `json:"quote"`
-	Score           *float64    `json:"score"`
-	RetrievalMethod string      `json:"retrieval_method"`
-	Metadata        MetadataObj `json:"metadata"`
-}
-
-// Citation представляет цитату
-type Citation struct {
-	SourceID string  `json:"source_id"`
-	TextSpan string  `json:"text_span"`
-	ChunkID  *string `json:"chunk_id"`
-}
-
-// QueryRewrite содержит информацию о переписанном запросе
-type QueryRewrite struct {
-	StandaloneQuery string `json:"standalone_query"`
-	UsedHistory     bool   `json:"used_history"`
-	Reason          string `json:"reason"`
-}
-
-// MLMetadata содержит метаинформацию о запросе
-type MLMetadata struct {
-	Route        string  `json:"route"`
-	Model        string  `json:"model"`
-	Provider     string  `json:"provider"`
-	LatencyMs    float64 `json:"latency_ms"`
-	FallbackUsed bool    `json:"fallback_used"`
-}
-
-// MetadataObj для дополнительных метаданных
-type MetadataObj map[string]interface{}
-
-// IsSuccessful возвращает true, если модель успешно ответила
-func (r *MLResponse) IsSuccessful() bool {
-	return r.RefusalReason == nil && r.Confidence != "low"
-}
-
-// IsRefusal возвращает true, если модель отказалась отвечать
-func (r *MLResponse) IsRefusal() bool {
-	return r.RefusalReason != nil
-}
-
-// ShouldEscalate возвращает true, если нужна эскалация оператору
-func (r *MLResponse) ShouldEscalate() bool {
-	return r.RefusalReason != nil || r.Confidence == "low"
 }
 
 type slaStore interface {
@@ -276,6 +206,8 @@ func New(
 	csatStore csatStore,
 	automation *automation.Engine,
 	template *template.Manager,
+	aiReply *ai.ReplyManager,
+	aiCache *ai.CacheManager,
 	webhook webhookStore,
 	dispatcher *notifier.Dispatcher,
 	opts Opts) (*Manager, error) {
@@ -321,6 +253,8 @@ func New(
 		priorityStore:              priorityStore,
 		automation:                 automation,
 		template:                   template,
+		aiReply:                    aiReply,
+		aiCache:                    aiCache,
 		db:                         opts.DB,
 		lo:                         opts.Lo,
 		incomingMessageQueue:       make(chan models.IncomingMessage, opts.IncomingMessageQueueSize),
@@ -328,9 +262,6 @@ func New(
 		outgoingProcessingMessages: sync.Map{},
 		continuityConfig:           continuityConfig,
 		subjectRefFormat:           subjectRefFormat,
-		httpClient: &http.Client{
-			Timeout: opts.Timeout,
-		},
 	}
 
 	return c, nil
@@ -1387,27 +1318,32 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			return fmt.Errorf("sending reply: %w", err)
 		}
 	case amodels.ActionAiReply:
-		// Get AI model response through http
-		payload, _ := json.Marshal(map[string]string{
-			"question":   conv.LastMessage.String,
-			"session_id": conv.UUID,
-		})
 
-		response, err := m.httpClient.Post("http://localhost:5015/ask", "application/json", bytes.NewReader(payload))
-		if err != nil {
-			return fmt.Errorf("getting ai reply: %w", err)
+		question := conv.LastMessage.String
+		var aiReply *aimodels.AIResponse
+
+		// Проверяем кэш
+		if cachedReply, ok := m.aiCache.Get(question); ok {
+			aiReply = cachedReply
+		} else {
+			resp, err := m.aiReply.Process(aimodels.AIRequest{
+				Question:  question,
+				SessionID: conv.UUID,
+			})
+			if err != nil {
+				return fmt.Errorf("error processing message through ai reply: %w", err)
+			}
+
+			aiReply = resp
+			m.aiCache.Set(question, aiReply)
 		}
-		defer response.Body.Close()
 
-		var result MLResponse
+		aiReplyJson, _ := json.Marshal(aiReply)
+		m.lo.Info(string(aiReplyJson))
+		replyMessage := aiReply.Answer
 
-		if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
-			return fmt.Errorf("getting ai reply: %w", err)
-		}
-
-		message := result.Answer
 		msg_type := "msg_plain"
-		if result.ShouldEscalate() {
+		if aiReply.ShouldEscalate() {
 			if rand.Intn(2) == 0 {
 				msg_type = "msg_escalation_1"
 			} else {
@@ -1418,15 +1354,15 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 				accessCode := generateAccessCode()
 
 				// Отправляем сообщение с кодом
-				message = fmt.Sprintf("%s\n\nКод обращения: %s", message, accessCode)
+				replyMessage = fmt.Sprintf("%s\n\nКод обращения: %s", replyMessage, accessCode)
 
-				err = m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
+				err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
 				if err != nil {
 					return fmt.Errorf("updating conversation status: %w", err)
 				}
 			} else if msg_type == "msg_escalation_2" {
 
-				message = fmt.Sprintf("%s\n\nВыберите канал связи:", message)
+				replyMessage = fmt.Sprintf("%s\n\nВыберите канал связи:", replyMessage)
 
 				statusID, err := strconv.Atoi(action.Value[0])
 				if err != nil {
@@ -1434,18 +1370,21 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 				}
 
 				err = m.UpdateConversationStatus(conv.UUID, statusID, "", "", user)
+				if err != nil {
+					return fmt.Errorf("updating conversation status: %w", err)
+				}
 			}
 		}
 
 		// Automated ai replies always go to the contact only. CCs from the
 		// conversation history are deliberately not carried forward.
-		_, err = m.QueueReply(
+		_, err := m.QueueReply(
 			[]mmodels.Media{},
 			conv.InboxID,
 			user.ID,
 			conv.ContactID,
 			&conv,
-			message,
+			replyMessage,
 			map[string]any{"is_automated": true, "msg_type": msg_type},
 		)
 		if err != nil {
