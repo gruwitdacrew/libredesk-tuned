@@ -21,7 +21,6 @@ services:
     volumes:
       - ./uploads:/libredesk/uploads:rw
       - ./config.toml:/libredesk/config.toml
-      - ./i18n:/libredesk/i18n:ro
     command: [sh, -c, "./libredesk --install --idempotent-install --yes --config /libredesk/config.toml && ./libredesk --upgrade --yes --config /libredesk/config.toml && ./libredesk --config /libredesk/config.toml"]
 
   # PostgreSQL database
