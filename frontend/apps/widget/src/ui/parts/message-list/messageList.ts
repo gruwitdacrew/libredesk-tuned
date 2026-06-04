@@ -18,8 +18,6 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 
 	button.addEventListener('click', () => { handlers.onContactManager(); });
 
-	// Disable "Связаться с руководителем" once a dialog is escalated or an
-	// escalation_2 channel flow is in progress.
 	const setButtonState = (state: Readonly<WidgetStore>): void => {
 		const locked = state.botStatus === 'escalated' || state.escalation2State !== null;
 		button.disabled = locked;
@@ -40,6 +38,10 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 
 	const rendered = { count: 0 };
 
+	const scrollToBottom = (): void => {
+		messagesEl.scrollTop = messagesEl.scrollHeight;
+	};
+
 	const renderNewMessages = (messages: readonly Message[]): void => {
 		if (messages.length < rendered.count) {
 			messagesEl.innerHTML = '';
@@ -49,7 +51,7 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 			messagesEl.append(createMessage(ctx, msg, formatTime(msg.timestamp), handlers));
 		}
 		rendered.count = messages.length;
-		messagesEl.scrollTop = messagesEl.scrollHeight;
+		scrollToBottom();
 	};
 
 	renderNewMessages(ctx.store.getStore().messages);
@@ -57,6 +59,18 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 	ctx.onDestroy(ctx.store.subscribe(
 		(state) => state.messages,
 		renderNewMessages,
+	));
+
+	ctx.onDestroy(ctx.store.subscribe(
+		(state) => state.isOpen,
+		(isOpen) => {
+			if (isOpen) requestAnimationFrame(scrollToBottom);
+		},
+	));
+
+	ctx.onDestroy(ctx.store.subscribe(
+		(state) => state.escalation2State,
+		() => { requestAnimationFrame(scrollToBottom); },
 	));
 
 	chat.append(messagesEl);

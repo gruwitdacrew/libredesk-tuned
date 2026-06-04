@@ -30,7 +30,7 @@ export class WebChat extends HTMLElement {
   private store = createStore<WidgetStore>({
     botStatus: 'online',
     messages: [
-      greetMessage
+      greetMessage,
     ],
     escalation2State: null,
     escalationContactsSent: false,
