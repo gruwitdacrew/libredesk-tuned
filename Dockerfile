@@ -7,7 +7,7 @@ RUN apk --no-cache add ca-certificates tzdata
 WORKDIR /libredesk
 
 # Copy necessary files
-COPY libredesk .
+COPY ./out/libredesk .
 COPY config.sample.toml config.toml
 
 # Expose port 9000 for the application

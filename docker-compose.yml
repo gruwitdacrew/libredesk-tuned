@@ -1,7 +1,10 @@
 services:
   # Libredesk app
   app:
-    image: libredesk/libredesk:latest
+    # image: libredesk/libredesk:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: libredesk_app
     restart: unless-stopped
     ports:
@@ -28,9 +31,8 @@ services:
     restart: unless-stopped
     networks:
       - libredesk
-    ports:
-      # Only bind on the local interface. To connect to Postgres externally, change this to 0.0.0.0
-      - "127.0.0.1:5434:5432"
+    expose:
+      - "5432"
     environment:
       # Set these environment variables to configure the database, defaults to libredesk.
       POSTGRES_USER: ${POSTGRES_USER:-libredesk}
@@ -49,9 +51,8 @@ services:
     image: redis:7-alpine
     container_name: libredesk_redis
     restart: unless-stopped
-    ports:
-      # Only bind on the local interface.
-      - "127.0.0.1:6379:6379"
+    expose:
+      - "6379"
     networks:
       - libredesk
     volumes:
