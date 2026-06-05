@@ -21,17 +21,21 @@ type ReplyManager struct {
 
 	workersCount int
 	timeout      time.Duration
+
+	aiEndpoint string
 	httpClient   *http.Client
 }
 
-func NewReplyManager(rd *redis.Client, workersCount int, timeout time.Duration, lo *logf.Logger) *ReplyManager {
+func NewReplyManager(rd *redis.Client, workersCount int, aiEndpoint string, timeout time.Duration, lo *logf.Logger) *ReplyManager {
 	q := &ReplyManager{
 		lo: lo,
 		rd: rd,
 
 		workersCount: workersCount,
-		httpClient:   &http.Client{Timeout: timeout},
 		timeout:      3 * timeout,
+
+		httpClient:   &http.Client{Timeout: timeout},
+		aiEndpoint: aiEndpoint,
 	}
 
 	// Запускаем воркеров
@@ -131,7 +135,7 @@ func (rm *ReplyManager) processRequest(req models.AIRequest) (*models.AIResponse
 		return nil, fmt.Errorf("error marshalling: %w", err)
 	}
 
-	resp, err := rm.httpClient.Post("http://localhost:5015/ask", "application/json", bytes.NewReader(payload))
+	resp, err := rm.httpClient.Post(rm.aiEndpoint, "application/json", bytes.NewReader(payload))
 	if err != nil {
 		return nil, fmt.Errorf("error requesting: %w", err)
 	}

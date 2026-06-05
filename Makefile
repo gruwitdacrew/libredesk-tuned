@@ -79,7 +79,7 @@ run-frontend-widget:
 .PHONY: build-backend
 build-backend: $(STUFFBIN)
 	@echo "→ Building backend..."
-	@go build -a \
+	@CGO_ENABLED=0 go build -a \
 		-ldflags="-X 'main.buildString=${BUILDSTR}' -X 'main.versionString=${VERSION}' -X 'github.com/abhinavxd/libredesk/internal/version.Version=${VERSION}' -s -w" \
 		-o ${BIN} ./cmd/...
 
