@@ -37,7 +37,9 @@
 
 			a {
 				text-decoration: underline;
-				word-break: break-all;
+				overflow-wrap: normal;
+				word-break: normal;
+				white-space: normal;
 			}
 
 			strong { font-weight: 600; }
@@ -94,11 +96,20 @@
 	gap: 0.5rem;
 	margin-top: 0.5rem;
 	flex-wrap: wrap;
+
+	& :not(:last-child){
+		flex: 1 0 40%	
+	}
+
+	& :last-child{
+		flex: 3 0 40%;
+	}
 }
 
 .escalation-btns__btn {
 	display: flex;
 	align-items: center;
+	justify-content: center;
 	gap: 0.375rem;
 	padding: 0.375rem 0.75rem;
 	border: 1px solid var(--cw-border-color);
@@ -110,10 +121,16 @@
 	color: var(--cw-text-color);
 	transition: background-color 0.15s ease-in-out;
 
+
 	svg {
 		width: 1rem;
 		height: 1rem;
+		max-width: min-content;
 		flex-shrink: 0;
+	}
+
+	span {
+		max-width: min-content;
 	}
 }
 
