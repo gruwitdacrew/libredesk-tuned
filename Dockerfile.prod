@@ -1,0 +1,42 @@
+# Stage 1: Build frontend (main app + widget)
+FROM node:20-alpine AS frontend
+WORKDIR /app
+RUN corepack enable
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY frontend/ ./
+RUN pnpm build:main && pnpm build:widget
+
+# Stage 2: Build Go binary and embed static assets via stuffbin
+FROM golang:1.25-alpine AS backend
+RUN apk add --no-cache git
+WORKDIR /app
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+COPY i18n/ ./i18n/
+COPY schema.sql .
+COPY static/ ./static/
+COPY --from=frontend /app/dist ./frontend/dist
+
+RUN go install github.com/knadh/stuffbin/...
+RUN go build -a \
+    -ldflags="-s -w \
+      -X 'main.buildString=docker' \
+      -X 'main.versionString=latest' \
+      -X 'github.com/abhinavxd/libredesk/internal/version.Version=latest'" \
+    -o ./out/libredesk ./cmd/...
+RUN "$(go env GOPATH)/bin/stuffbin" -a stuff \
+    -in ./out/libredesk -out ./out/libredesk \
+    frontend/dist i18n schema.sql static
+
+# Stage 3: Minimal runtime image
+FROM alpine:3.18
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /libredesk
+COPY --from=backend /app/out/libredesk .
+EXPOSE 9000
+CMD ["./libredesk"]

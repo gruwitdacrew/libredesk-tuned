@@ -84,11 +84,6 @@ export default defineConfig(({ mode, command }) => {
       rollupOptions: {
         output: {
           manualChunks: (id) => {
-            // Keep the whole Vue ecosystem in ONE chunk: vue, its scoped internals (@vue/runtime-dom,
-            // @vue/runtime-core, @vue/reactivity, @vue/shared — note their pnpm paths are `.pnpm/@vue+…`,
-            // not `.pnpm/vue`), @vueuse, vue-router and pinia. Splitting @vueuse away from @vue/runtime-dom
-            // makes Rolldown emit a cross-chunk `init_runtime_dom_esm_bundler()` call without wiring the
-            // import, which blows up at runtime as "init_runtime_dom_esm_bundler is not defined".
             if (['vue', '@vue', 'vue-router', 'pinia'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'vue-vendor'
             if (['radix-vue', 'reka-ui'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'radix'
             if (['lucide-vue-next', '@radix-icons'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'icons'
