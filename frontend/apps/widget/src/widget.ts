@@ -17,7 +17,7 @@ const resolveConfig = (): LibredeskConfig => {
   const params = new URLSearchParams(window.location.search)
   const global = (window as { WebChatConfig?: LibredeskConfig }).WebChatConfig
   return {
-    baseUrl: global?.baseUrl ?? '',
+    baseUrl: global?.baseUrl ?? 'http://192.168.19.213:9000',
     inboxId: params.get('inbox_id') ?? global?.inboxId ?? ''
   }
 }
