@@ -62,15 +62,22 @@ export const createLoader = (ctx: WidgetContext): HTMLElement => {
 		text.textContent = PHRASES_1[0];
 
 		const cycle = (): void => {
-			idx = (idx + 1) % PHRASES_1.length;
+			idx += 1;
 			text.textContent = PHRASES_1[idx] ?? '';
-			phase1Timer = window.setTimeout(cycle, INTERVAL_1);
+
+			if (idx < PHRASES_1.length - 1) {
+				phase1Timer = window.setTimeout(cycle, INTERVAL_1);
+			} else {
+				phase1Timer = null;
+			}
 		};
+
 		phase1Timer = window.setTimeout(cycle, INTERVAL_1);
 		longTimer = window.setTimeout(startPhase2, LONG_THRESHOLD);
 	};
 
 	const show = (): void => {
+		stopAll();
 		happyTimer = window.setTimeout(() => {
 			happyTimer = null;
 			loader.classList.add('loader--visible');
