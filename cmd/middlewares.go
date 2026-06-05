@@ -226,6 +226,21 @@ func notAuthPage(handler fastglue.FastRequestHandler) fastglue.FastRequestHandle
 	}
 }
 
+// widgetCORSMiddleware adds CORS headers for widget API and CSAT routes.
+// The widget is a Web Component embedded on third-party sites, so all
+// requests arrive as cross-origin and require explicit CORS headers.
+func widgetCORSMiddleware(r *fastglue.Request) *fastglue.Request {
+	path := string(r.RequestCtx.Path())
+	if !strings.HasPrefix(path, "/api/v1/widget/") && !strings.HasPrefix(path, "/api/v1/csat/") {
+		return r
+	}
+	r.RequestCtx.Response.Header.Set("Access-Control-Allow-Origin", "*")
+	r.RequestCtx.Response.Header.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	r.RequestCtx.Response.Header.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Libredesk-Inbox-ID, X-Libredesk-Visitor-Token")
+	r.RequestCtx.Response.Header.Set("Access-Control-Max-Age", "86400")
+	return r
+}
+
 // rateLimit applies rate limiting for the given rule name.
 func rateLimit(handler fastglue.FastRequestHandler, ruleName string) fastglue.FastRequestHandler {
 	return func(r *fastglue.Request) error {

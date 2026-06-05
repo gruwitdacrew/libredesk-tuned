@@ -18,6 +18,21 @@ const maxPageSize = 500
 
 // initHandlers initializes the HTTP routes and handlers for the application.
 func initHandlers(g *fastglue.Fastglue, hub *ws.Hub) {
+	// CORS middleware for widget and CSAT routes (cross-origin from embedding sites).
+	g.Before(widgetCORSMiddleware)
+
+	// Handle OPTIONS preflight for widget and CSAT paths.
+	g.Router.GlobalOPTIONS = func(ctx *fasthttp.RequestCtx) {
+		path := string(ctx.Path())
+		if strings.HasPrefix(path, "/api/v1/widget/") || strings.HasPrefix(path, "/api/v1/csat/") {
+			ctx.Response.Header.Set("Access-Control-Allow-Origin", "*")
+			ctx.Response.Header.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			ctx.Response.Header.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Libredesk-Inbox-ID, X-Libredesk-Visitor-Token")
+			ctx.Response.Header.Set("Access-Control-Max-Age", "86400")
+		}
+		ctx.SetStatusCode(fasthttp.StatusNoContent)
+	}
+
 	// Authentication.
 	g.POST("/api/v1/auth/login", rateLimit(handleLogin, "auth"))
 	g.GET("/logout", auth(handleLogout))
