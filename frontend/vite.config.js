@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
 import path from 'path'
+import fs from 'fs'
 import autoprefixer from 'autoprefixer'
 import tailwind from 'tailwindcss'
 import { defineConfig } from 'vite'
@@ -100,7 +101,22 @@ export default defineConfig(({ mode, command }) => {
         }
       }
     },
-    plugins: [vue()],
+    plugins: [
+    vue(),
+    isWidget && command === 'build' && {
+      name: 'copy-widget-to-static',
+      closeBundle() {
+        const assetsDir = path.resolve(__dirname, 'dist/widget/assets')
+        const jsFile = fs.readdirSync(assetsDir).find(f => f.endsWith('.js'))
+        if (jsFile) {
+          fs.copyFileSync(
+            path.join(assetsDir, jsFile),
+            path.resolve(__dirname, '../static/widget.js')
+          )
+        }
+      }
+    }
+  ],
     resolve: {
       tsconfigPaths: true,
       alias: {
