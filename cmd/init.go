@@ -451,7 +451,7 @@ func initAIReplyManager(rd *redis.Client) *ai.ReplyManager {
 
 	lo := initLogger("ai_reply_manager")
 
-	return ai.NewReplyManager(rd, ko.Int("ai.reply.workers"), ko.Duration("ai.reply.timeout"), lo)
+	return ai.NewReplyManager(rd, ko.Int("ai.reply.workers"), ko.String("ai.reply.endpoint"), ko.Duration("ai.reply.timeout"), lo)
 }
 
 // initAICacheManager инициализирует AI менеджер с кэшем через Redis
