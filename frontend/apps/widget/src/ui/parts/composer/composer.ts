@@ -72,24 +72,21 @@ export const createComposer = (
 
 	buttonSend.disabled = true;
 
-	// "Диалог завершен" view — replaces the input once the conversation is finished.
-	const done = document.createElement('div');
-	done.className = 'composer__done';
-
+	// "Диалог завершен" text — shown in place of the input once the dialog is finished.
 	const doneText = document.createElement('p');
-	doneText.className = 'composer__done-text';
+	doneText.className = 'composer__done-text is-hidden';
 	doneText.textContent = 'Диалог завершен';
 
+	// Restart button — shown both in the finished view (with the text above) and during
+	// the escalation_2 channel-picker step, where it sits below the still-visible (locked) input.
 	const restartBtn = document.createElement('button');
 	restartBtn.type = 'button';
-	restartBtn.className = 'composer__restart';
+	restartBtn.className = 'composer__restart is-hidden';
 	restartBtn.append(createIcon('addNew'));
 	const restartLabel = document.createElement('span');
 	restartLabel.textContent = 'Начать новый диалог';
 	restartBtn.append(restartLabel);
 	restartBtn.addEventListener('click', onReset);
-
-	done.append(doneText, restartBtn);
 
 	const setLocked = (locked: boolean): void => {
 		textarea.disabled = locked;
@@ -104,10 +101,13 @@ export const createComposer = (
 		const s = ctx.store.getStore();
 		// Dialog finished (escalation_1 closed, or escalation_2 closed after contacts).
 		const completed = s.botStatus === 'escalated' && s.escalation2State === null;
+		// escalation_2 channel-picker step: keep the (locked) input, but offer a restart.
+		const selectingChannel = s.escalation2State === 'select_channel';
 
 		composer.classList.toggle('is-hidden', completed);
 		counter.classList.toggle('is-hidden', completed);
-		done.classList.toggle('composer__done--visible', completed);
+		doneText.classList.toggle('is-hidden', !completed);
+		restartBtn.classList.toggle('is-hidden', !(completed || selectingChannel));
 
 		const ch = s.escalation2State;
 		textarea.placeholder = ch === 'telegram' || ch === 'max' || ch === 'email'
@@ -121,7 +121,7 @@ export const createComposer = (
 	ctx.onDestroy(ctx.store.subscribe((s) => s, () => { sync(); }));
 
 	composer.append(textarea, buttonSend);
-	wrapper.append(composer, counter, done);
+	wrapper.append(composer, counter, doneText, restartBtn);
 
 	return wrapper;
 };
