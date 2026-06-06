@@ -18,8 +18,3 @@ jobs:
 
       - name: Deploy
         run: docker compose up -d --build
-
-      - name: Restart frontend widget (background)
-        run: | 
-          pkill -f "run-frontend-widget" || true 
-          nohup make run-frontend-widget > widget.log 2>&1 & disown
