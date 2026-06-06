@@ -36,6 +36,19 @@
 	}
 }
 
+/* Channel-picker step: the composer also holds the restart button above the input,
+   so reserve its height (button 34px + row-gap 0.75rem) on top of the escalation
+   spacing, keeping the same breathing room above the channel buttons. */
+.panel--channel-select .chat {
+	padding-bottom: calc(5.5rem + 24px + 34px + 0.75rem);
+}
+
+@media (max-width: 480px) {
+	.panel--channel-select .chat {
+		padding-bottom: calc(5.5rem + 24px + 34px + 0.75rem + env(safe-area-inset-bottom));
+	}
+}
+
 @media (max-width: 480px) {
 	.chat {
 		flex: 1;

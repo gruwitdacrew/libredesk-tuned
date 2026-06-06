@@ -172,6 +172,9 @@ export class WebChat extends HTMLElement {
       const s = this.ctx.store.getStore()
       const escalating = s.botStatus === 'escalated' || s.escalation2State !== null
       panel.classList.toggle('panel--escalation', escalating)
+      // Channel-picker step: composer holds the restart button above the input, so the
+      // chat reserves extra bottom space (see .panel--channel-select in messageList.css).
+      panel.classList.toggle('panel--channel-select', s.escalation2State === 'select_channel')
     }
     syncEscalationClass()
     this.ctx.onDestroy(this.ctx.store.subscribe((s) => s.botStatus, syncEscalationClass))
