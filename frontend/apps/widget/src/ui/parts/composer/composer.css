@@ -62,6 +62,11 @@
 	}
 }
 
+/* escalation_2 channel-picker step: lift the restart button above the locked input. */
+.composer__restart--top {
+	order: -1;
+}
+
 .composer__restart:hover {
 	background-color: var(--cw-primary);
 	color: var(--cw-white);

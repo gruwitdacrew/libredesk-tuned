@@ -108,6 +108,9 @@ export const createComposer = (
 		counter.classList.toggle('is-hidden', completed);
 		doneText.classList.toggle('is-hidden', !completed);
 		restartBtn.classList.toggle('is-hidden', !(completed || selectingChannel));
+		// On the channel-picker step the button sits above the (locked) input; in the
+		// finished view it stays below the "Диалог завершен" text (default order).
+		restartBtn.classList.toggle('composer__restart--top', selectingChannel);
 
 		const ch = s.escalation2State;
 		textarea.placeholder = ch === 'telegram' || ch === 'max' || ch === 'email'
