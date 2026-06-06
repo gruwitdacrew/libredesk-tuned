@@ -15,6 +15,9 @@ services:
       # If the password is set during first docker-compose up, the system user password will be set to this value.
       # You can always set system user password later by running `docker exec -it libredesk_app ./libredesk --set-system-user-password`.
       LIBREDESK_SYSTEM_USER_PASSWORD: ${LIBREDESK_SYSTEM_USER_PASSWORD:-}
+      VITE_ESCALATION_TELEGRAM: ${VITE_ESCALATION_TELEGRAM:-}
+      VITE_ESCALATION_MAX: ${VITE_ESCALATION_MAX:-}
+      VITE_ESCALATION_EMAIL: ${VITE_ESCALATION_EMAIL:-}
     networks:
       - libredesk
     depends_on:
