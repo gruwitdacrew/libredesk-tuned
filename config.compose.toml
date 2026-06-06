@@ -80,8 +80,8 @@ timeout = "2m"
 evaluation_interval = "5m"
 
 [ai.reply]
-timeout = "60s"
-workers = 5
+timeout = "90"
+workers = 4
 endpoint = "http://host.docker.internal:5015/ask"
 
 [ai.cache]
