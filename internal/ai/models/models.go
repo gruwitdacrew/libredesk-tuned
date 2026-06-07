@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/google/uuid"
@@ -88,17 +90,59 @@ type MLMetadata struct {
 // MetadataObj для дополнительных метаданных
 type MetadataObj map[string]interface{}
 
-// IsSuccessful возвращает true, если модель успешно ответила
-func (r *AIResponse) IsSuccessful() bool {
-	return r.RefusalReason == nil && r.Confidence != "low"
+// Генерация кода с math/rand
+func (r *AIResponse) generateAccessCode() string {
+	code := make([]byte, 6)
+	for i := range code {
+		code[i] = byte('0' + rand.Intn(10))
+	}
+	return string(code)
 }
 
-// IsRefusal возвращает true, если модель отказалась отвечать
-func (r *AIResponse) IsRefusal() bool {
-	return r.RefusalReason != nil
+func (r *AIResponse) escalate(preEscalationMessage string) (string, string) {
+	if rand.Intn(2) == 0 {
+		// Генерируем код обращения (6 цифр)
+		accessCode := r.generateAccessCode()
+		return fmt.Sprintf(preEscalationMessage+"Свяжитесь с руководителем направления Александрой Емельяновой любым удобным для вас способом.\n\nКод обращения: %s\n\nПожалуйста укажите код при обращении, это поможет Александре понять суть вашего вопроса.", accessCode), "msg_escalation_1"
+	} else {
+		return preEscalationMessage + "Оставьте заявку на связь с руководителем направления, Александрой Емельяновой\n\nВыберите удобный способ связи:", "msg_escalation_2"
+	}
 }
 
-// ShouldEscalate возвращает true, если нужна эскалация оператору
-func (r *AIResponse) ShouldEscalate() bool {
-	return r.RefusalReason != nil || r.Confidence == "low"
+// PrepareAnswer подготавливает ответ для отправки пользователю
+func (r *AIResponse) PrepareAnswer() (string, string) {
+	if r.RefusalReason == nil {
+		// Случай 1: нет отказа/эскалации — показываем обычный ответ
+		return r.Answer, "msg_plain"
+	}
+
+	switch *r.RefusalReason {
+	case "insufficient_context":
+		// Случай 2: недостаточно контекста — msg_escalation_1 / msg_escalation_2_step1
+		return r.escalate("Мне не удалось ответить на ваш вопрос.\n\n")
+
+	case "guardrails":
+		// Случай 3: сработали guardrails — msg_fallback
+		return "Я не совсем понял ваш вопрос. Вот что я могу:\n* рассказать о программах, расписании и стоимости курсов;\n* подобрать обучение под ваш запрос;\n* прислать шаблоны документов.\nПереформулируйте, пожалуйста, запрос – и я постараюсь помочь.", "msg_fallback"
+
+	case "contact_info":
+		// Случай 4: запрос контактов — msg_escalation_1 / msg_escalation_2_step1 (без первого предложения)
+		return r.escalate("")
+
+	case "smalltalk_thanks":
+		// Случай 5: благодарность
+		return "Пожалуйста! Если понадобится уточнить информацию по курсам или подобрать обучение под вашу задачу, напишите вопрос.", "msg_thanks"
+
+	case "smalltalk_greeting":
+		// Случай 6: приветствие
+		return "Здравствуйте! Я помогу с вопросами по курсам: могу рассказать о программе, датах, стоимости, формате обучения, документах или подобрать подходящий курс. Напишите, что именно вас интересует.", "msg_greeting"
+
+	default:
+		// Неизвестный refusal_reason — эскалация
+		if r.Answer != "" {
+			return r.Answer, "msg_unknown"
+		} else {
+			return r.escalate("Мне не удалось ответить на ваш вопрос.\n\n")
+		}
+	}
 }

@@ -23,7 +23,7 @@ type ReplyManager struct {
 	timeout      time.Duration
 
 	aiEndpoint string
-	httpClient   *http.Client
+	httpClient *http.Client
 }
 
 func NewReplyManager(rd *redis.Client, workersCount int, aiEndpoint string, timeout time.Duration, lo *logf.Logger) *ReplyManager {
@@ -34,7 +34,7 @@ func NewReplyManager(rd *redis.Client, workersCount int, aiEndpoint string, time
 		workersCount: workersCount,
 		timeout:      3 * timeout,
 
-		httpClient:   &http.Client{Timeout: timeout},
+		httpClient: &http.Client{Timeout: timeout},
 		aiEndpoint: aiEndpoint,
 	}
 

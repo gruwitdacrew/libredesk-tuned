@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"slices"
 	"strconv"
 	"strings"
@@ -1338,41 +1337,21 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			m.aiCache.Set(question, aiReply)
 		}
 
-		aiReplyJson, _ := json.Marshal(aiReply)
-		m.lo.Info(string(aiReplyJson))
-		replyMessage := aiReply.Answer
+		answer, msg_type := aiReply.PrepareAnswer()
 
-		msg_type := "msg_plain"
-		if aiReply.ShouldEscalate() {
-			if rand.Intn(2) == 0 {
-				msg_type = "msg_escalation_1"
-			} else {
-				msg_type = "msg_escalation_2"
+		if msg_type == "msg_escalation_1" {
+			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
+			if err != nil {
+				return fmt.Errorf("updating conversation status: %w", err)
 			}
-			if msg_type == "msg_escalation_1" {
-				// Генерируем код обращения (6 цифр)
-				accessCode := generateAccessCode()
-
-				// Отправляем сообщение с кодом
-				replyMessage = fmt.Sprintf("%s\n\nКод обращения: %s", replyMessage, accessCode)
-
-				err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
-				if err != nil {
-					return fmt.Errorf("updating conversation status: %w", err)
-				}
-			} else if msg_type == "msg_escalation_2" {
-
-				replyMessage = fmt.Sprintf("%s\n\nВыберите канал связи:", replyMessage)
-
-				statusID, err := strconv.Atoi(action.Value[0])
-				if err != nil {
-					return fmt.Errorf("invalid status ID %q: %w", action.Value[0], err)
-				}
-
-				err = m.UpdateConversationStatus(conv.UUID, statusID, "", "", user)
-				if err != nil {
-					return fmt.Errorf("updating conversation status: %w", err)
-				}
+		} else if msg_type == "msg_escalation_2" {
+			statusID, err := strconv.Atoi(action.Value[0])
+			if err != nil {
+				return fmt.Errorf("invalid status ID %q: %w", action.Value[0], err)
+			}
+			err = m.UpdateConversationStatus(conv.UUID, statusID, "", "", user)
+			if err != nil {
+				return fmt.Errorf("updating conversation status: %w", err)
 			}
 		}
 
@@ -1384,7 +1363,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			user.ID,
 			conv.ContactID,
 			&conv,
-			replyMessage,
+			answer,
 			map[string]any{"is_automated": true, "msg_type": msg_type},
 		)
 		if err != nil {
@@ -1404,15 +1383,6 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 		return fmt.Errorf("unknown action: %s", action.Type)
 	}
 	return nil
-}
-
-// Генерация кода с math/rand
-func generateAccessCode() string {
-	code := make([]byte, 6)
-	for i := range code {
-		code[i] = byte('0' + rand.Intn(10))
-	}
-	return string(code)
 }
 
 // RemoveConversationAssignee removes assigned user from a conversation.
@@ -1482,7 +1452,7 @@ func (m *Manager) SendCSATReply(actorUserID int, conversation models.Conversatio
 	// 	return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
 	// }
 
-	message := "Был ли мой ответ полезен? Ваша оценка поможет мне стать лучше."
+	message := "Был ли мой ответ полезен? Ваша\nоценка поможет мне стать лучше."
 
 	meta := map[string]any{
 		"is_csat":      true,

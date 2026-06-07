@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/abhinavxd/libredesk/internal/conversation/models"
 	"github.com/abhinavxd/libredesk/internal/envelope"
 	"github.com/valyala/fasthttp"
 	"github.com/zerodha/fastglue"
@@ -157,8 +158,38 @@ func handleSubmitCSATResponse(r *fastglue.Request) error {
 		req.Feedback = req.Feedback[:maxCsatFeedbackLength]
 	}
 
+	csat, err := app.csat.Get(uuid)
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+
 	// Update CSAT response
-	if err := app.csat.UpdateResponse(uuid, req.Rating, req.Feedback, nil); err != nil {
+	if err := app.csat.UpdateResponse(csat.UUID, req.Rating, req.Feedback, nil); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+
+	system, err := app.user.GetSystemUser()
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+
+	conversation, err := app.conversation.GetConversation(csat.ConversationID, "", "")
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+
+	if err := app.conversation.UpdateConversationStatus(conversation.UUID, 0 /**status_id**/, models.StatusClosed, "", system); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+
+	message := "Спасибо за обратную связь. Это\nпоможет мне стать точнее и полезнее для вас."
+
+	meta := map[string]any{
+		"is_automated": true,
+	}
+
+	_, err = app.conversation.QueueReply(nil /**media**/, conversation.InboxID, system.ID, conversation.ContactID, &conversation, message, meta)
+	if err != nil {
 		return sendErrorEnvelope(r, err)
 	}
 

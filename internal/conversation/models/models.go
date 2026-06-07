@@ -356,7 +356,7 @@ func (m *Message) CensorCSATContentWithStatus(csatSubmitted bool, csatUUID strin
 		return
 	}
 
-	m.Content = "Был ли мой ответ полезен? Ваша оценка поможет мне стать лучше."
+	m.Content = "Был ли мой ответ полезен? Ваша\nоценка поможет мне стать лучше."
 	m.TextContent = m.Content
 
 	meta["csat_submitted"] = csatSubmitted
