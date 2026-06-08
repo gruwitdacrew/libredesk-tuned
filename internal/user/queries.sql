@@ -166,8 +166,8 @@ JOIN roles r ON r.name = role_name
 RETURNING user_id;
 
 -- name: insert-contact-with-external-id
-INSERT INTO users (email, type, first_name, last_name, "password", avatar_url, external_user_id, custom_attributes)
-VALUES ($1, 'contact', $2, $3, $4, $5, $6, $7)
+INSERT INTO users (email, type, first_name, last_name, "password", avatar_url, external_user_id, custom_attributes, escalation_variant)
+VALUES ($1, 'contact', $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (external_user_id) WHERE type = 'contact' AND deleted_at IS NULL AND external_user_id IS NOT NULL
 DO UPDATE SET email = EXCLUDED.email, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name, updated_at = now()
 RETURNING id;

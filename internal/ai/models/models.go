@@ -99,8 +99,8 @@ func (r *AIResponse) generateAccessCode() string {
 	return string(code)
 }
 
-func (r *AIResponse) escalate(preEscalationMessage string) (string, string) {
-	if rand.Intn(2) == 0 {
+func (r *AIResponse) escalate(preEscalationMessage string, escalationVariant int) (string, string) {
+	if escalationVariant == 1 {
 		// Генерируем код обращения (6 цифр)
 		accessCode := r.generateAccessCode()
 		return fmt.Sprintf(preEscalationMessage+"Свяжитесь с руководителем направления Александрой Емельяновой любым удобным для вас способом.\n\nКод обращения: %s\n\nПожалуйста укажите код при обращении, это поможет Александре понять суть вашего вопроса.", accessCode), "msg_escalation_1"
@@ -110,7 +110,7 @@ func (r *AIResponse) escalate(preEscalationMessage string) (string, string) {
 }
 
 // PrepareAnswer подготавливает ответ для отправки пользователю
-func (r *AIResponse) PrepareAnswer() (string, string) {
+func (r *AIResponse) PrepareAnswer(escalationVariant int) (string, string) {
 	if r.RefusalReason == nil {
 		// Случай 1: нет отказа/эскалации — показываем обычный ответ
 		return r.Answer, "msg_plain"
@@ -119,7 +119,7 @@ func (r *AIResponse) PrepareAnswer() (string, string) {
 	switch *r.RefusalReason {
 	case "insufficient_context":
 		// Случай 2: недостаточно контекста — msg_escalation_1 / msg_escalation_2_step1
-		return r.escalate("Мне не удалось ответить на ваш вопрос.\n\n")
+		return r.escalate("Мне не удалось ответить на ваш вопрос.\n\n", escalationVariant)
 
 	case "guardrails":
 		// Случай 3: сработали guardrails — msg_fallback
@@ -127,7 +127,7 @@ func (r *AIResponse) PrepareAnswer() (string, string) {
 
 	case "contact_info":
 		// Случай 4: запрос контактов — msg_escalation_1 / msg_escalation_2_step1 (без первого предложения)
-		return r.escalate("")
+		return r.escalate("", escalationVariant)
 
 	case "smalltalk_thanks":
 		// Случай 5: благодарность
@@ -142,7 +142,7 @@ func (r *AIResponse) PrepareAnswer() (string, string) {
 		if r.Answer != "" {
 			return r.Answer, "msg_unknown"
 		} else {
-			return r.escalate("Мне не удалось ответить на ваш вопрос.\n\n")
+			return "Что-то пошло не так, попробуйте повторить запрос позже или свяжитесь с руководителем направления.", "msg_error"
 		}
 	}
 }

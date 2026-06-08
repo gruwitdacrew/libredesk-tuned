@@ -10,6 +10,7 @@ import (
 	"io"
 	"maps"
 	"math"
+	mathRand "math/rand"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -26,6 +27,7 @@ import (
 	umodels "github.com/abhinavxd/libredesk/internal/user/models"
 	realip "github.com/ferluci/fast-realip"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 	"github.com/volatiletech/null/v9"
 	"github.com/zerodha/fastglue"
@@ -338,6 +340,67 @@ func handleChatUpdateLastSeen(r *fastglue.Request) error {
 	return r.SendEnvelope(true)
 }
 
+// handleGenerateJWT generates or refreshes JWT.
+func handleGenerateJWT(r *fastglue.Request) error {
+	app := r.Context.(*App)
+
+	// Получаем инбокс для виджета
+	inbox, err := getWidgetInbox(r)
+	if err != nil {
+		return r.SendErrorEnvelope(fasthttp.StatusInternalServerError, app.i18n.T("globals.messages.somethingWentWrong"), nil, envelope.GeneralError)
+	}
+
+	// Парсим тело запроса
+	var req struct {
+		OldJWT string `json:"old_jwt,omitempty"`
+	}
+	r.Decode(&req, "json") // игнорируем ошибку, может быть пусто
+
+	var externalUserID string
+	var firstName string
+
+	// Если передан старый токен — пробуем обновить
+	if req.OldJWT != "" {
+		claims, err := verifyStandardJWT(req.OldJWT, inbox.Secret.String)
+		if err == nil && claims.ExternalUserID != "" {
+			externalUserID = claims.ExternalUserID
+			firstName = claims.FirstName
+			app.lo.Debug("refreshing JWT for existing user", "external_user_id", externalUserID)
+		}
+	}
+
+	// Если нет старого токена или он невалидный — генерируем новый ID
+	if externalUserID == "" {
+		externalUserID = uuid.New().String()
+		firstName = "Пользователь"
+		app.lo.Debug("generating new JWT", "external_user_id", externalUserID)
+	}
+
+	// Создаём payload
+	payload := Claims{
+		ExternalUserID: externalUserID,
+		FirstName:      firstName,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 1, 0)), // 1 месяц
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
+	signedToken, err := token.SignedString([]byte(inbox.Secret.String))
+	if err != nil {
+		app.lo.Error("error generating JWT", "error", err)
+		return r.SendErrorEnvelope(fasthttp.StatusInternalServerError, app.i18n.T("globals.messages.somethingWentWrong"), nil, envelope.GeneralError)
+	}
+
+	return r.SendEnvelope(map[string]any{
+		"jwt":              signedToken,
+		"external_user_id": externalUserID,
+		"expires_at":       payload.ExpiresAt.Time.Unix(),
+		"refresh_ttl_days": 30,
+	})
+}
+
 // handleAuthExchange exchanges a JWT for a session token.
 // Used by the setUser() flow for verified contacts.
 func handleAuthExchange(r *fastglue.Request) error {
@@ -370,9 +433,6 @@ func handleAuthExchange(r *fastglue.Request) error {
 	if claims.ExternalUserID == "" || len(claims.ExternalUserID) > maxExternalUserIDLength {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.Ts("globals.messages.required", "name", "external_user_id"), nil, envelope.InputError)
 	}
-	if claims.Email == "" || len(claims.Email) > maxEmailLength {
-		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.Ts("globals.messages.required", "name", "email"), nil, envelope.InputError)
-	}
 	if claims.FirstName == "" || len(claims.FirstName) > maxNameLength {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.Ts("globals.messages.required", "name", "first_name"), nil, envelope.InputError)
 	}
@@ -402,12 +462,6 @@ func handleAuthExchange(r *fastglue.Request) error {
 		app.redis.Set(ctx, reverseKey, token, sessionTTL)
 		return r.SendEnvelope(map[string]any{
 			"session_token": token,
-			"user": map[string]any{
-				"user_id":    contactID,
-				"is_visitor": false,
-				"first_name": claims.FirstName,
-				"last_name":  claims.LastName,
-			},
 		})
 	}
 
@@ -424,6 +478,14 @@ func handleAuthExchange(r *fastglue.Request) error {
 		app.lo.Error("error generating session token", "error", err)
 		return r.SendErrorEnvelope(fasthttp.StatusInternalServerError, app.i18n.T("globals.messages.somethingWentWrong"), nil, envelope.GeneralError)
 	}
+
+	// Устанавливаем HttpOnly cookie
+	r.RequestCtx.Response.Header.Set("Set-Cookie", fmt.Sprintf(
+		"libredesk-session=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d",
+		token,
+		int(sessionTTL.Seconds()),
+	))
+
 	return sendSession(token)
 }
 
@@ -776,12 +838,15 @@ func resolveOrCreateExternalContact(app *App, claims Claims) (int, error) {
 
 	// Create contact if not found.
 	if claims.ExternalUserID != "" {
+		escalationVariant := mathRand.Intn(2) + 1
+
 		user := umodels.User{
-			FirstName:        claims.FirstName,
-			LastName:         claims.LastName,
-			Email:            null.NewString(claims.Email, true),
-			ExternalUserID:   null.NewString(claims.ExternalUserID, true),
-			CustomAttributes: marshalCustomAttributes(claims.ContactCustomAttributes, app),
+			FirstName:         claims.FirstName,
+			LastName:          claims.LastName,
+			Email:             null.NewString(claims.Email, true),
+			ExternalUserID:    null.NewString(claims.ExternalUserID, true),
+			CustomAttributes:  marshalCustomAttributes(claims.ContactCustomAttributes, app),
+			EscalationVariant: null.IntFrom(escalationVariant),
 		}
 		if err := app.user.CreateContact(&user); err != nil {
 			return 0, err

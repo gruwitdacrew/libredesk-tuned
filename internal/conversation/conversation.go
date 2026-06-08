@@ -1334,10 +1334,18 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			}
 
 			aiReply = resp
-			m.aiCache.Set(question, aiReply)
+
+			if aiReply.Answer != "" {
+				m.aiCache.Set(question, aiReply)
+			}
 		}
 
-		answer, msg_type := aiReply.PrepareAnswer()
+		// Получаем variant (по умолчанию 1, если не задан)
+		variant := 1
+		if user.EscalationVariant.Valid && user.EscalationVariant.Int <= 2 {
+			variant = user.EscalationVariant.Int
+		}
+		answer, msg_type := aiReply.PrepareAnswer(variant)
 
 		if msg_type == "msg_escalation_1" {
 			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
