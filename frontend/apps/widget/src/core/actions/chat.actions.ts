@@ -1,8 +1,10 @@
 import type { Store } from '@store';
-import type { WidgetStore, Message, MessageType, CsatRating } from '@types';
+import type { BotStatus, CsatRating, Channel, MessageHandlers, Message, WidgetStore } from '@types';
 import type { LibredeskApi, LibredeskMessage } from '../api/libredesk';
 import { getCsatReasonMessage } from '../static/csatMessages';
+import { CHANNELS, isChannel } from '../static/channels';
 import greetMessage from '../static/greetMessage';
+import { mapMessage, resolveType, sortByTime } from './message.mapper';
 
 export interface ChatActions {
 	sendMessage: (text: string) => Promise<void>;
@@ -12,44 +14,23 @@ export interface ChatActions {
 	setBotLongThinking: (isThinking: boolean) => void;
 	setBotError: (isError: boolean) => void;
 	setBotEscalated: (isEscalated: boolean) => void;
-	selectEscalation2Channel: (channel: 'telegram' | 'max' | 'email') => void;
+	selectEscalation2Channel: (channel: Channel) => void;
 	rateCsat: (csatUuid: string, rating: CsatRating) => void;
 	submitCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>;
 	resetSession: () => void;
 	initOnLoad: () => Promise<void>;
 }
 
-const sortByTime = (msgs: Message[]): Message[] =>
-	msgs.slice().sort((a, b) => a.timestamp - b.timestamp);
-
-const resolveType = (msg: LibredeskMessage): MessageType => {
-	if (msg.meta?.is_csat === true) { return 'csat'; }
-	if (msg.meta?.msg_type === 'msg_escalation_1') { return 'escalation_1'; }
-	if (msg.meta?.msg_type === 'msg_escalation_2') { return 'escalation_2'; }
-	return 'plain';
-};
-
-const mapMessage = (msg: LibredeskMessage): Message => {
-	const type = resolveType(msg);
-	return {
-		id: msg.uuid,
-		content: msg.author.type === 'agent' ? (msg.content) : msg.content,
-		type,
-		author: msg.author.type === 'agent' ? 'bot' : 'user',
-		timestamp: new Date(msg.created_at).getTime(),
-		...(type === 'csat' && msg.meta?.csat_uuid !== undefined
-			? { meta: { csatUuid: msg.meta.csat_uuid } }
-			: {}),
-	};
-};
-
-const CHANNEL_PREFIXES: Record<'telegram' | 'max' | 'email', string> = {
-	telegram: 'Телеграм: ',
-	max: 'МАХ: ',
-	email: 'Почта: ',
-};
-
 export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi): ChatActions => {
+	const patch = (mutate: (state: WidgetStore) => Partial<WidgetStore>): void => {
+		store.setStore((state) => ({ ...state, ...mutate(state) }));
+	};
+
+	/**
+	 * Отправляет сообщение: сразу показывает его оптимистично, затем создаёт диалог
+	 * (первая отправка) или дослает в существующий. Отправка при выбранном канале —
+	 * это сдача контактов: добавляется префикс канала, после чего кнопки блокируются.
+	 */
 	const sendMessage = async (text: string): Promise<void> => {
 		const trimmed = text.trim();
 		if (trimmed.length === 0) {
@@ -57,13 +38,10 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}
 
 		const { escalation2State } = store.getStore();
-		// A send while a channel is chosen (not null / not 'select_channel') is the
-		// user submitting their contacts → lock the channel buttons afterwards.
-		const isContactsSubmit = escalation2State !== null && escalation2State !== 'select_channel';
-		const prefix = isContactsSubmit ? CHANNEL_PREFIXES[escalation2State] : '';
+		const isContactsSubmit = isChannel(escalation2State);
+		const prefix = isChannel(escalation2State) ? CHANNELS[escalation2State].prefix : '';
 		const content = prefix.length > 0 ? `${prefix}${trimmed}` : trimmed;
 
-		// Optimistic: render user message immediately
 		const optimistic: Message = {
 			id: `pending-${String(Date.now())}`,
 			content,
@@ -72,8 +50,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			timestamp: Date.now(),
 		};
 
-		store.setStore((s) => ({
-			...s,
+		patch((s) => ({
 			messages: [...s.messages, optimistic],
 			isInitializing: s.conversationUuid === null,
 			isAwaitingReply: true,
@@ -85,11 +62,9 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 
 			if (conversationUuid === null) {
 				const data = await api.initConversation(content);
-
 				api.storeSession(data.session_token);
 
-				store.setStore((s) => ({
-					...s,
+				patch(() => ({
 					sessionToken: data.session_token,
 					conversationUuid: data.conversation.uuid,
 					isInitializing: false,
@@ -107,18 +82,16 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			}
 		} catch (err) {
 			console.error('[Chat] send failed:', err);
-			store.setStore((s) => ({
-				...s,
+			patch((s) => ({
 				isInitializing: false,
 				isAwaitingReply: false,
-				// Roll back the lock if the contacts submission didn't go through.
 				escalationContactsSent: isContactsSubmit ? false : s.escalationContactsSent,
 			}));
 		}
 	};
 
+	/** Обрабатывает входящее сообщение. Визитёрское эхо уже показано оптимистично, поэтому рендерим только сообщения агента. */
 	const receiveMessage = (msg: LibredeskMessage): void => {
-		// Only render agent messages — visitor echo is already shown optimistically
 		if (msg.author.type !== 'agent') {
 			return;
 		}
@@ -129,8 +102,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}
 
 		const type = resolveType(msg);
-		store.setStore((s) => ({
-			...s,
+		patch((s) => ({
 			botStatus: s.botStatus === 'escalated' ? 'escalated' : 'online',
 			isAwaitingReply: false,
 			escalation2State: type === 'escalation_2' ? 'select_channel' : s.escalation2State,
@@ -138,25 +110,17 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}));
 	};
 
-	// Selecting/switching a channel only updates state — the prompt is rendered inline
-	// in the escalation_2 bubble and updated in place, so no new message is appended.
-	const selectEscalation2Channel = (channel: 'telegram' | 'max' | 'email'): void => {
-		store.setStore((s) => ({
-			...s,
-			escalation2State: channel,
-		}));
+	/** Выбор/смена канала только меняет состояние: подсказка обновляется в пузыре escalation_2 на месте, новое сообщение не добавляется. */
+	const selectEscalation2Channel = (channel: Channel): void => {
+		patch(() => ({ escalation2State: channel }));
 	};
 
-	// Step 1: user picked a rating. Append the follow-up reason prompt. No request
-	// yet — the single POST happens once a reason is chosen (see submitCsatReason).
+	/** Шаг 1 CSAT: пользователь выбрал оценку — добавляем подсказку о причине. Запрос пока не уходит (см. submitCsatReason). */
 	const rateCsat = (csatUuid: string, rating: CsatRating): void => {
-		store.setStore((s) => ({
-			...s,
-			messages: [...s.messages, getCsatReasonMessage(csatUuid, rating)],
-		}));
+		patch((s) => ({ messages: [...s.messages, getCsatReasonMessage(csatUuid, rating)] }));
 	};
 
-	// Step 2: user picked a reason. Submit rating + reason in a single request.
+	/** Шаг 2 CSAT: причина выбрана — оценка и причина уходят одним запросом. */
 	const submitCsatReason = async (
 		csatUuid: string,
 		rating: CsatRating,
@@ -170,22 +134,35 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}
 	};
 
-	const setBotTyping = (isTyping: boolean): void => {
-		store.setStore((s) => ({
-			...s,
-			botStatus: isTyping ? 'typing' : 'online',
-		}));
+	const setBotStatus = (isActive: boolean, status: BotStatus): void => {
+		patch(() => ({ botStatus: isActive ? status : 'online' }));
 	};
 
+	const setBotTyping = (isTyping: boolean): void => {
+		setBotStatus(isTyping, 'typing');
+	};
+
+	/** Примечание: setBotThinking и setBotLongThinking сейчас ведут себя одинаково (оба ставят 'long_thinking') — поведение сохранено как было. */
+	const setBotThinking = (isThinking: boolean): void => {
+		setBotStatus(isThinking, 'long_thinking');
+	};
+
+	const setBotLongThinking = (isThinking: boolean): void => {
+		setBotStatus(isThinking, 'long_thinking');
+	};
+
+	const setBotError = (isError: boolean): void => {
+		setBotStatus(isError, 'error');
+	};
+
+	/** Финализирует эскалацию. На шаге контактов (escalation2State — выбранный канал) событие Closed завершает его и сбрасывает состояние. */
 	const setBotEscalated = (isEscalated: boolean): void => {
-		store.setStore((s) => {
+		patch((s) => {
 			if (!isEscalated) {
-				return { ...s, botStatus: 'online' };
+				return { botStatus: 'online' };
 			}
-			// contacts step: escalation2State is a selected channel — Closed event finalises it
 			const inContactStep = s.escalation2State !== null && s.escalation2State !== 'select_channel';
 			return {
-				...s,
 				botStatus: s.escalation2State === 'select_channel' ? s.botStatus : 'escalated',
 				escalation2State: inContactStep ? null : s.escalation2State,
 				isAwaitingReply: false,
@@ -193,34 +170,14 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		});
 	};
 
-	const setBotThinking = (isThinking: boolean): void => {
-		store.setStore((s) => ({
-			...s,
-			botStatus: isThinking ? 'long_thinking' : 'online',
-		}));
-	};
-
-	const setBotLongThinking = (isThinking: boolean): void => {
-		store.setStore((s) => ({
-			...s,
-			botStatus: isThinking ? 'long_thinking' : 'online',
-		}));
-	};
-
-	const setBotError = (isError: boolean): void => {
-		store.setStore((s) => ({
-			...s,
-			botStatus: isError ? 'error' : 'online',
-		}));
-	};
-
+	/** Восстанавливает последнюю сессию из хранилища вместе с сохранённым выбором канала эскалации (чтобы пузырь и префикс отправки совпали). */
 	const restoreSession = async (): Promise<void> => {
 		const token = api.getSessionToken();
 		if (token === null) {
 			return;
 		}
 
-		store.setStore((s) => ({ ...s, sessionToken: token }));
+		patch(() => ({ sessionToken: token }));
 
 		try {
 			const conversations = await api.getConversations();
@@ -230,32 +187,31 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 			}
 
 			const { conversation, messages } = await api.getConversation(latest.uuid);
-
-			// Restore the persisted escalation choice so the channel bubble re-renders
-			// with the right selected/locked state and the send-prefix is preserved.
 			const escalation = api.loadEscalation();
 
-			store.setStore((s) => ({
-				...s,
+			patch((s) => ({
 				conversationUuid: conversation.uuid,
-				botStatus: conversation.status === "Escalation" || conversation.status === "Closed" ? 'escalated' : 'online' ,
+				botStatus:
+					conversation.status === 'Escalation' || conversation.status === 'Closed'
+						? 'escalated'
+						: 'online',
 				escalation2State: escalation?.state ?? s.escalation2State,
 				escalationContactsSent: escalation?.sent ?? s.escalationContactsSent,
 				messages: [greetMessage, ...sortByTime(messages.map(mapMessage))],
 			}));
 		} catch {
 			api.clearSession();
-			store.setStore((s) => ({ ...s, sessionToken: null }));
+			patch(() => ({ sessionToken: null }));
 		}
 	};
 
-const resetSession = (): void => {
+	/** Полный сброс сессии (хранилище + стор). isOpen намеренно не сбрасываем — панель остаётся открытой. */
+	const resetSession = (): void => {
 		api.clearSession();
 		api.clearEscalation();
-		store.setStore((s) => ({
+		patch(() => ({
 			botStatus: 'online',
 			messages: [greetMessage],
-			isOpen: s.isOpen,
 			sessionToken: null,
 			conversationUuid: null,
 			isInitializing: false,
@@ -275,14 +231,24 @@ const resetSession = (): void => {
 		sendMessage,
 		receiveMessage,
 		setBotTyping,
+		setBotThinking,
+		setBotLongThinking,
+		setBotError,
 		setBotEscalated,
 		selectEscalation2Channel,
 		rateCsat,
 		submitCsatReason,
 		resetSession,
 		initOnLoad,
-		setBotThinking,
-		setBotLongThinking,
-		setBotError,
 	};
 };
+
+/** Сопоставляет обработчики UI-сообщений с действиями чата (используется панелью). */
+export const createMessageHandlers = (actions: ChatActions): MessageHandlers => ({
+	onChannelSelect: actions.selectEscalation2Channel,
+	onCsatRate: actions.rateCsat,
+	onCsatReason: actions.submitCsatReason,
+	onContactManager: () => {
+		void actions.sendMessage('Переведите на руководителя');
+	},
+});

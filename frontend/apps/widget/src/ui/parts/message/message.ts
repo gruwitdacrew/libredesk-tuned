@@ -1,234 +1,8 @@
-import createIcon from '@icons';
-import type { CsatRating, Message, MessageHandlers, WidgetContext } from '@types';
-import { renderContent } from '@utils';
-import { csatReasons } from '../../../core/static/csatMessages';
-import { getEscalationPrompt } from '../../../core/static/escalation2Messages';
-
-type Channel = 'telegram' | 'max' | 'email';
-type IconName = 'telegram' | 'max' | 'email';
-
-interface BtnConfig {
-	icon: IconName;
-	label: string;
-	mod: string;
-	href: string | null;
-}
-
-const buildContactBtn = ({ icon, label, mod, href }: BtnConfig): HTMLElement => {
-	const el: HTMLAnchorElement | HTMLButtonElement = href !== null
-		? document.createElement('a')
-		: document.createElement('button');
-
-	if (el instanceof HTMLAnchorElement && href !== null) {
-		el.href = href;
-		el.target = '_blank';
-		el.rel = 'noopener noreferrer';
-	} else if (el instanceof HTMLButtonElement) {
-		el.type = 'button';
-	}
-
-	el.className = `escalation-btns__btn escalation-btns__btn--${mod}`;
-	el.append(createIcon(icon));
-	const span = document.createElement('span');
-	span.textContent = label;
-	el.append(span);
-	return el;
-};
-
-const buildEscalation1Btns = (): HTMLElement => {
-	const btns = document.createElement('div');
-	btns.className = 'escalation-btns';
-
-	// These come from build-time env and may be undefined when not set in .env.
-	const tg = import.meta.env.VITE_ESCALATION_TELEGRAM ?? '';
-	const max = import.meta.env.VITE_ESCALATION_MAX ?? '';
-	const email = import.meta.env.VITE_ESCALATION_EMAIL ?? '';
-
-	const configs: BtnConfig[] = [
-		{ icon: 'telegram', label: 'Telegram', mod: 'tg',    href: tg.length > 0 ? `https://t.me/${tg}` : null },
-		{ icon: 'max',      label: 'MAX',       mod: '1984',  href: max.length > 0 ? max : null },
-		{ icon: 'email',    label: 'Почта',     mod: 'email', href: email.length > 0 ? `mailto:${email}` : null },
-	];
-
-	for (const cfg of configs) {
-		btns.append(buildContactBtn(cfg));
-	}
-
-	return btns;
-};
-
-// escalation_2 bubble: channel buttons + an inline prompt that updates in place when
-// the user switches channel (no new message bubble). State is read from the store at
-// creation (so a restored/locked choice renders correctly) and a single guarded
-// subscription locks the buttons once contacts have been sent.
-const buildEscalation2Btns = (ctx: WidgetContext, onChannelSelect: (ch: Channel) => void): HTMLElement => {
-	const container = document.createElement('div');
-	container.className = 'escalation2';
-
-	const btns = document.createElement('div');
-	btns.className = 'escalation-btns';
-	container.append(btns);
-
-	const prompt = document.createElement('p');
-	prompt.className = 'escalation2__prompt';
-	container.append(prompt);
-
-	const configs = [
-		{ icon: 'telegram' as IconName, label: 'Telegram', mod: 'tg',   ch: 'telegram' as Channel },
-		{ icon: 'max'      as IconName, label: 'MAX',       mod: '1984', ch: 'max'      as Channel },
-		{ icon: 'email'    as IconName, label: 'Почта',     mod: 'email', ch: 'email'   as Channel },
-	];
-
-	const byChannel = new Map<Channel, HTMLButtonElement>();
-	const all: HTMLButtonElement[] = [];
-
-	const showPrompt = (ch: Channel): void => {
-		prompt.textContent = getEscalationPrompt(ch);
-		prompt.classList.add('escalation2__prompt--visible');
-	};
-
-	const selectBtn = (picked: HTMLButtonElement): void => {
-		for (const b of all) {
-			b.classList.toggle('is-selected', b === picked);
-		}
-	};
-
-	const lock = (): void => {
-		for (const b of all) {
-			b.classList.toggle('is-disabled', !b.classList.contains('is-selected'));
-			b.disabled = true;
-		}
-	};
-
-	for (const { icon, label, mod, ch } of configs) {
-		const btn = document.createElement('button');
-		btn.type = 'button';
-		btn.className = `escalation-btns__btn escalation-btns__btn--${mod}`;
-		btn.append(createIcon(icon));
-		const span = document.createElement('span');
-		span.textContent = label;
-		btn.append(span);
-		btn.addEventListener('click', () => {
-			selectBtn(btn);
-			showPrompt(ch);
-			onChannelSelect(ch);
-		});
-		byChannel.set(ch, btn);
-		all.push(btn);
-		btns.append(btn);
-	}
-
-	// Reflect persisted/restored state at creation.
-	const initial = ctx.store.getStore();
-	const initialChannel = initial.escalation2State;
-	if (initialChannel === 'telegram' || initialChannel === 'max' || initialChannel === 'email') {
-		const btn = byChannel.get(initialChannel);
-		if (btn !== undefined) {
-			selectBtn(btn);
-			showPrompt(initialChannel);
-		}
-	}
-	if (initial.escalationContactsSent) {
-		lock();
-	}
-
-	// Lock the group once contacts are sent; guard against the destroyed (cleared) list.
-	ctx.onDestroy(ctx.store.subscribe(
-		(s) => s.escalationContactsSent,
-		(sent) => {
-			if (!container.isConnected) {
-				return;
-			}
-			if (sent) {
-				lock();
-			}
-		},
-	));
-
-	return container;
-};
-
-// Lock a button group after a choice: highlight the picked button, fade the rest,
-// and disable all so the answer can't be changed. Re-rendering never touches these
-// nodes (message list is append-only), so the in-place state persists.
-const lockChoice = (all: HTMLButtonElement[], picked: HTMLButtonElement): void => {
-	for (const b of all) {
-		b.classList.toggle('is-selected', b === picked);
-		b.classList.toggle('is-disabled', b !== picked);
-		b.disabled = true;
-	}
-};
-
-const unlockChoice = (all: HTMLButtonElement[]): void => {
-	for (const b of all) {
-		b.classList.remove('is-selected', 'is-disabled');
-		b.disabled = false;
-	}
-};
-
-// Step 1: rating buttons (👍 Полезно = 2, 👎 Бесполезно = 1).
-const buildCsatRatingBtns = (
-	csatUuid: string,
-	onCsatRate: (csatUuid: string, rating: CsatRating) => void,
-): HTMLElement => {
-	const btns = document.createElement('div');
-	btns.className = 'csat-rating-btns';
-
-	const configs: { label: string; rating: CsatRating; mod: 'up' | 'down' }[] = [
-		{ label: 'Полезно',    rating: 2, mod: 'up' },
-		{ label: 'Бесполезно', rating: 1, mod: 'down' },
-	];
-
-	const all: HTMLButtonElement[] = [];
-
-	for (const { label, rating, mod } of configs) {
-		const btn = document.createElement('button');
-		btn.type = 'button';
-		btn.className = `csat-rating-btns__btn csat-rating-btns__btn--${mod}`;
-		btn.append(createIcon('thumb'));
-		const span = document.createElement('span');
-		span.textContent = label;
-		btn.append(span);
-		btn.addEventListener('click', () => {
-			lockChoice(all, btn);
-			onCsatRate(csatUuid, rating);
-		});
-		all.push(btn);
-		btns.append(btn);
-	}
-
-	return btns;
-};
-
-// Step 2: reason buttons — the set depends on the rating (positive vs negative).
-const buildCsatReasonBtns = (
-	csatUuid: string,
-	rating: CsatRating,
-	onCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>,
-): HTMLElement => {
-	const btns = document.createElement('div');
-	btns.className = 'csat-reason-btns';
-
-	const all: HTMLButtonElement[] = [];
-
-	for (const reason of csatReasons(rating)) {
-		const btn = document.createElement('button');
-		btn.type = 'button';
-		btn.className = 'csat-reason-btns__btn';
-		btn.textContent = reason;
-		btn.addEventListener('click', () => {
-			lockChoice(all, btn);
-			void onCsatReason(csatUuid, rating, reason).catch(() => {
-				// submit failed — re-enable so the user can retry
-				unlockChoice(all);
-			});
-		});
-		all.push(btn);
-		btns.append(btn);
-	}
-
-	return btns;
-};
+import type { Message, MessageHandlers, WidgetContext } from '@types';
+import { el, renderContent } from '@utils';
+import { buildEscalation1Btns } from './escalation1';
+import { buildEscalation2Btns } from './escalation2';
+import { buildCsatRatingBtns, buildCsatReasonBtns } from './csat';
 
 export const createMessage = (
 	ctx: WidgetContext,
@@ -236,29 +10,24 @@ export const createMessage = (
 	messageTime: string,
 	handlers: MessageHandlers,
 ): HTMLElement => {
-	const wrapper = document.createElement('div');
-	wrapper.className = 'message-wrapper';
-
-	const message = document.createElement('div');
-	message.className = msg.author === 'bot' ? 'message' : 'message message--user';
-
-	const messageText = document.createElement('p');
-	messageText.className = 'message__text';
+	const messageText = el('p', { className: 'message__text' });
 	if (msg.author === 'bot') {
 		messageText.innerHTML = renderContent(msg.content);
 	} else {
 		messageText.textContent = msg.content;
 	}
 
-	message.append(messageText);
+	const message = el(
+		'div',
+		{ className: msg.author === 'bot' ? 'message' : 'message message--user' },
+		[messageText],
+	);
 
 	if (messageTime.length > 0) {
-		const time = document.createElement('span');
-		time.className = 'message__time';
-		time.textContent = messageTime;
-		message.append(time);
+		message.append(el('span', { className: 'message__time', text: messageTime }));
 	}
-	wrapper.append(message);
+
+	const wrapper = el('div', { className: 'message-wrapper' }, [message]);
 
 	if (msg.type === 'escalation_1') {
 		wrapper.classList.add('message-wrapper--escalation');

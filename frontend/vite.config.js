@@ -85,13 +85,13 @@ export default defineConfig(({ mode, command }) => {
       rollupOptions: {
         output: {
           manualChunks: (id) => {
-            if (['vue', '@vue', 'vue-router', 'pinia'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'vue-vendor'
-            if (['radix-vue', 'reka-ui'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'radix'
-            if (['lucide-vue-next', '@radix-icons'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'icons'
-            if (['clsx', 'tailwind-merge', 'class-variance-authority'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'utils'
-            if (['vee-validate', 'zod'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'forms'
-            if (['axios', 'date-fns', 'mitt', 'qs', 'vue-i18n'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'misc'
             if (!isWidget) {
+              if (['radix-vue', 'reka-ui'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'radix'
+              if (['lucide-vue-next', '@radix-icons'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'icons'
+              if (['clsx', 'tailwind-merge', 'class-variance-authority'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'utils'
+              if (['vee-validate', 'zod'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'forms'
+              if (['axios', 'date-fns', 'mitt', 'qs', 'vue-i18n'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'misc'
+              if (['vue', '@vue', 'vue-router', 'pinia'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'vue-vendor'
               if (['@unovis'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'charts'
               if (['@tiptap'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'editor'
               if (['codemirror', '@codemirror'].some(p => id.includes(`/node_modules/.pnpm/${p}`))) return 'codemirror'

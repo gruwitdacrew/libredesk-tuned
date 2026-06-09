@@ -2,8 +2,7 @@
 	all: initial;
 
 	position: fixed;
-	/* Keep the launcher clear of the notch / home indicator on mobile;
-	   falls back to a flat 20px where safe-area insets are 0 (desktop). */
+	/* Отступ от чёлки / home-индикатора на мобильных; на десктопе safe-area = 0 → ровно 20px. */
 	right: max(20px, env(safe-area-inset-right));
 	bottom: max(20px, env(safe-area-inset-bottom));
 	z-index: 2147483000;

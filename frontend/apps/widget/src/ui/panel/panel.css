@@ -5,9 +5,7 @@
 	bottom: 0;
 	right: 0;
 	width: 25rem;
-	box-shadow:
-		-16px 0px 8px -4px rgba(24, 39, 75, 0.08),
-		-8px 0px 6px -4px rgba(24, 39, 75, 0.12);
+	box-shadow: var(--cw-panel-shadow);
 
 	transform-origin: bottom right;
 	opacity: 1;
@@ -23,8 +21,8 @@
 		position: fixed;
 		inset: 0;
 		width: 100%;
-		/* Fallback first, then dynamic viewport height so the panel tracks the
-		   shrinking/growing mobile browser chrome (iOS Safari URL bar, etc.). */
+		/* Сначала фолбэк, затем динамическая высота вьюпорта, чтобы панель
+		   следовала за сжатием/раскрытием мобильного браузера (URL-бар iOS Safari). */
 		height: 100vh;
 		height: 100dvh;
 		border-radius: 0;
