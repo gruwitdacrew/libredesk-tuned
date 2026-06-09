@@ -1,15 +1,25 @@
 import DOMPurify from 'dompurify';
 
-DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-	if (node.nodeName === 'A') {
-		node.setAttribute('target', '_blank');
-		node.setAttribute('rel', 'noopener noreferrer');
+let hookRegistered = false;
+
+/** Регистрирует хук один раз (ссылки открываются в новой вкладке): защита от повторной регистрации при ре-эвалюации/повторной вставке бандла. */
+const ensureLinkHook = (): void => {
+	if (hookRegistered) {
+		return;
 	}
-});
+	hookRegistered = true;
+	DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+		if (node.nodeName === 'A') {
+			node.setAttribute('target', '_blank');
+			node.setAttribute('rel', 'noopener noreferrer');
+		}
+	});
+};
 
 /** Санитизирует HTML бота перед вставкой через innerHTML: разрешён только безопасный набор тегов, ссылки открываются в новой вкладке. */
-export const renderContent = (text: string): string =>
-	DOMPurify.sanitize(text as string, {
+export const renderContent = (text: string): string => {
+	ensureLinkHook();
+	return DOMPurify.sanitize(text as string, {
 		ALLOWED_TAGS: [
 			'p', 'br', 'hr',
 			'strong', 'em', 'b', 'i', 's', 'del',
@@ -20,3 +30,4 @@ export const renderContent = (text: string): string =>
 		],
 		ALLOWED_ATTR: ['href', 'target', 'rel'],
 	});
+};

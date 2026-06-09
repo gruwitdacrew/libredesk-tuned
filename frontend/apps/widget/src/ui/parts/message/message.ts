@@ -37,7 +37,7 @@ export const createMessage = (
 		wrapper.append(buildEscalation2Btns(ctx, handlers.onChannelSelect));
 	} else if (msg.type === 'csat' && msg.meta?.csatUuid !== undefined) {
 		wrapper.classList.add('message-wrapper--csat');
-		wrapper.append(buildCsatRatingBtns(msg.meta.csatUuid, handlers.onCsatRate));
+		wrapper.append(buildCsatRatingBtns(msg.meta.csatUuid, handlers.onCsatRate, msg.meta.rating));
 	} else if (
 		msg.type === 'csat_reason' &&
 		msg.meta?.csatUuid !== undefined &&

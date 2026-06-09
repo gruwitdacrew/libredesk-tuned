@@ -35,6 +35,23 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 		messagesEl.scrollTop = messagesEl.scrollHeight;
 	};
 
+	let scrollFrame: number | null = null;
+	const scheduleScroll = (): void => {
+		if (scrollFrame !== null) {
+			cancelAnimationFrame(scrollFrame);
+		}
+		scrollFrame = requestAnimationFrame(() => {
+			scrollFrame = null;
+			scrollToBottom();
+		});
+	};
+	ctx.onDestroy(() => {
+		if (scrollFrame !== null) {
+			cancelAnimationFrame(scrollFrame);
+			scrollFrame = null;
+		}
+	});
+
 	/**
 	 * Рендер только дополняет список. Если количество сообщений уменьшилось
 	 * (сброс сессии очищает messages) — полностью перерисовываем с нуля.
@@ -60,7 +77,7 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 			(state) => state.isOpen,
 			(isOpen) => {
 				if (isOpen) {
-					requestAnimationFrame(scrollToBottom);
+					scheduleScroll();
 				}
 			},
 		),
@@ -70,7 +87,7 @@ export const createChat = (ctx: WidgetContext, handlers: MessageHandlers): HTMLE
 		ctx.store.subscribe(
 			(state) => state.escalation2State,
 			() => {
-				requestAnimationFrame(scrollToBottom);
+				scheduleScroll();
 			},
 		),
 	);
