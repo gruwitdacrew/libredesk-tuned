@@ -1,5 +1,6 @@
 import type { LibredeskConfig } from '@types';
 import type { LibredeskMessage } from '../api/libredesk';
+import { isEscalatedStatus, isClosedStatus } from '../static/conversationStatus';
 
 export interface WsHandlers {
 	onNewMessage: (message: LibredeskMessage) => void;
@@ -144,9 +145,12 @@ export const createLibredeskWs = (config: LibredeskConfig, handlers: WsHandlers)
 				}
 				case WS_EVENT.CONVERSATION_UPDATE: {
 					const td = data.data as { uuid: string; status: string } | undefined;
-					if (td?.status === 'Escalation') {
+					if (td === undefined) {
+						break;
+					}
+					if (isEscalatedStatus(td.status)) {
 						handlers.onEscalated(td.uuid);
-					} else if (td?.status === 'Closed') {
+					} else if (isClosedStatus(td.status)) {
 						handlers.onClosed(td.uuid);
 					}
 					break;

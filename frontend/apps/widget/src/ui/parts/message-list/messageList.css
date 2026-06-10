@@ -27,24 +27,24 @@
 
 
 .panel--escalation .chat {
-	padding-bottom: calc(5.5rem + 24px);
+	padding-bottom: calc(5rem + 24px);
 }
 
 @media (max-width: 480px) {
 	.panel--escalation .chat {
-		padding-bottom: calc(5.5rem + 24px + env(safe-area-inset-bottom));
+		padding-bottom: calc(5rem + 24px + env(safe-area-inset-bottom));
 	}
 }
 
 /* Шаг выбора канала: композер дополнительно держит кнопку перезапуска над вводом,
    поэтому резервируем её высоту (34px кнопка + 0.75rem row-gap) сверх отступов эскалации. */
 .panel--channel-select .chat {
-	padding-bottom: calc(5.5rem + 24px + 34px + 0.75rem);
+	padding-bottom: calc(4.5rem + 24px + 34px + 0.75rem);
 }
 
 @media (max-width: 480px) {
 	.panel--channel-select .chat {
-		padding-bottom: calc(5.5rem + 24px + 34px + 0.75rem + env(safe-area-inset-bottom));
+		padding-bottom: calc(4.5rem + 24px + 34px + 0.75rem + env(safe-area-inset-bottom));
 	}
 }
 

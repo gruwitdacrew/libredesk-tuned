@@ -3,6 +3,7 @@ import type { BotStatus, CsatRating, Channel, MessageHandlers, Message, WidgetSt
 import type { LibredeskApi, LibredeskMessage } from '../api/libredesk';
 import { getCsatReasonMessage } from '../static/csatMessages';
 import { CHANNELS, isChannel } from '../static/channels';
+import { isEscalatedStatus, isClosedStatus } from '../static/conversationStatus';
 import greetMessage from '../static/greetMessage';
 import { mapMessage, resolveType, sortByTime } from './message.mapper';
 
@@ -62,10 +63,14 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 
 			if (conversationUuid === null) {
 				const data = await api.initConversation(content);
-				api.storeSession(data.session_token);
+				// Токен приходит только для нового визитёра; у вернувшегося устройства сохраняем прежний.
+				if (data.session_token !== undefined && data.session_token !== '') {
+					api.storeSession(data.session_token);
+				}
+				api.storeActiveConversation(data.conversation.uuid);
 
-				patch(() => ({
-					sessionToken: data.session_token,
+				patch((s) => ({
+					sessionToken: data.session_token ?? s.sessionToken,
 					conversationUuid: data.conversation.uuid,
 					isInitializing: false,
 				}));
@@ -74,7 +79,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 					receiveMessage(msg);
 				}
 
-				if (data.conversation.status === 'Escalation') {
+				if (isEscalatedStatus(data.conversation.status)) {
 					setBotEscalated(true);
 				}
 			} else {
@@ -178,49 +183,71 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		});
 	};
 
-	/** Восстанавливает последнюю сессию из хранилища вместе с сохранённым выбором канала эскалации (чтобы пузырь и префикс отправки совпали). */
+	/**
+	 * Восстанавливает активный диалог устройства (его UUID хранится отдельно), а не «последний из списка»:
+	 * после «нового чата» пользователь видит чистый чат, а прежние диалоги остаются только для администратора.
+	 * Сентинел '' — свежий старт (показываем только приветствие); отсутствие ключа — миграция со старого токена.
+	 */
 	const restoreSession = async (): Promise<void> => {
 		const token = api.getSessionToken();
 		if (token === null) {
 			return;
 		}
 
+		// Токен поднимает WS (подписка в chatRuntime) независимо от того, есть ли что показывать.
 		patch(() => ({ sessionToken: token }));
 
+		const activeUuid = api.getActiveConversation();
+		if (activeUuid === '') {
+			return;
+		}
+
 		try {
-			const conversations = await api.getConversations();
-			const latest = conversations[0];
-			if (latest === undefined) {
-				return;
+			let uuid = activeUuid;
+			if (uuid === null) {
+				// Миграция: у старого токена ровно один диалог — берём его и фиксируем как активный.
+				const conversations = await api.getConversations();
+				const latest = conversations[0];
+				if (latest === undefined) {
+					return;
+				}
+				uuid = latest.uuid;
+				api.storeActiveConversation(uuid);
 			}
 
-			const { conversation, messages } = await api.getConversation(latest.uuid);
+			const { conversation, messages } = await api.getConversation(uuid);
 			const escalation = api.loadEscalation();
+			const status = conversation.status;
 
 			patch((s) => ({
 				conversationUuid: conversation.uuid,
-				botStatus:
-					conversation.status === 'Escalation' || conversation.status === 'Closed'
-						? 'escalated'
-						: 'online',
+				botStatus: isEscalatedStatus(status) || isClosedStatus(status) ? 'escalated' : 'online',
 				escalation2State: escalation?.state ?? s.escalation2State,
 				escalationContactsSent: escalation?.sent ?? s.escalationContactsSent,
 				messages: [greetMessage, ...sortByTime(messages.map(mapMessage))],
 			}));
-		} catch {
-			api.clearSession();
-			patch(() => ({ sessionToken: null }));
+		} catch (err) {
+			if (err instanceof Error && err.message === 'SESSION_EXPIRED') {
+				// Токен невалиден (401): request() уже удалил его из хранилища — синхронизируем стор и гасим WS.
+				patch(() => ({ sessionToken: null }));
+				return;
+			}
+			// Активный диалог не загрузился (например, удалён): помечаем чат свежим, токен устройства сохраняем.
+			api.clearActiveConversation();
 		}
 	};
 
-	/** Полный сброс сессии (хранилище + стор). isOpen намеренно не сбрасываем — панель остаётся открытой. */
+	/**
+	 * «Новый чат»: сбрасывает только вид, но СОХРАНЯЕТ session token — устройство остаётся тем же
+	 * контактом, поэтому прежние диалоги видны администратору, а пользователю — нет. Токен в сторе
+	 * не обнуляем (иначе WS переподключится), isOpen не трогаем — панель остаётся открытой.
+	 */
 	const resetSession = (): void => {
-		api.clearSession();
+		api.clearActiveConversation();
 		api.clearEscalation();
 		patch(() => ({
 			botStatus: 'online',
 			messages: [greetMessage],
-			sessionToken: null,
 			conversationUuid: null,
 			isInitializing: false,
 			isAwaitingReply: false,

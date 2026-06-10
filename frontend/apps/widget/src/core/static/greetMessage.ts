@@ -2,7 +2,7 @@ import type { Message } from '@types';
 
 export default {
 	id: 'greet-message',
-	content: `Здравствуйте!\n\nНапишите, что вас интересует – я постараюсь помочь.`,
+	content: `Здравствуйте!\n\nКакой вопрос вас интересует?`,
 	type: 'plain',
 	author: 'bot',
 	timestamp: 0,
