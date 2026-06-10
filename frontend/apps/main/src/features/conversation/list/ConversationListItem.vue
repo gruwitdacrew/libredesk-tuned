@@ -60,7 +60,7 @@
                     </TooltipTrigger>
                     <TooltipContent>{{ contactFullName }}</TooltipContent>
                   </Tooltip>
-                  <span class="text-xs text-muted-foreground truncate">
+                  <span class="text-xs truncate font-medium" :class="getChannelStyle(conversation.inbox_channel).text">
                     {{ conversation.inbox_name }}
                   </span>
                 </div>
@@ -167,6 +167,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@shared-ui/components/u
 import { Checkbox } from '@shared-ui/components/ui/checkbox'
 import { useConversationStore } from '@main/stores/conversation'
 import { useBulkActionPermissions } from '@/composables/useBulkActionPermissions'
+import { getChannelStyle } from '@main/utils/channel'
 import { useI18n } from 'vue-i18n'
 
 let timer = null

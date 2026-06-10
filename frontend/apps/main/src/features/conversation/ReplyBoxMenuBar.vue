@@ -43,7 +43,13 @@
       </div>
     </div>
 
-    <Button class="h-8 w-6 px-8" @click="handleSend" :disabled="!enableSend" :isLoading="isSending" v-if="showSendButton">
+    <Button
+      class="h-8 w-full px-8"
+      @click="handleSend"
+      :disabled="!enableSend"
+      :isLoading="isSending"
+      v-if="showSendButton"
+    >
       {{ $t('globals.messages.send') }}
     </Button>
   </div>
@@ -57,10 +63,7 @@ import { Toggle } from '@shared-ui/components/ui/toggle'
 import { Paperclip, Smile } from 'lucide-vue-next'
 
 const EmojiPicker = defineAsyncComponent(async () => {
-  const [mod] = await Promise.all([
-    import('vue3-emoji-picker'),
-    import('vue3-emoji-picker/css'),
-  ])
+  const [mod] = await Promise.all([import('vue3-emoji-picker'), import('vue3-emoji-picker/css')])
   return mod.default
 })
 
@@ -71,7 +74,9 @@ const emojiToggleWrapperRef = ref(null)
 const emit = defineEmits(['emojiSelect'])
 
 const isMobile = useMediaQuery('(max-width: 768px)')
-watch(isMobile, (m) => { if (m) isEmojiPickerVisible.value = false })
+watch(isMobile, (m) => {
+  if (m) isEmojiPickerVisible.value = false
+})
 
 // Using defineProps for props that don't need two-way binding
 defineProps({
@@ -97,15 +102,19 @@ const pickerStyle = computed(() => {
   const left = Math.max(8, Math.min(rect.left, window.innerWidth - pickerWidth - 8))
   return {
     bottom: `${window.innerHeight - rect.top + 8}px`,
-    left: `${left}px`,
+    left: `${left}px`
   }
 })
 
 // Close picker when clicking outside; ignore clicks on the toggle button itself
 // (otherwise the click-outside fires before the toggle, instantly re-closing).
-onClickOutside(emojiPickerRef, () => {
-  isEmojiPickerVisible.value = false
-}, { ignore: [emojiToggleWrapperRef] })
+onClickOutside(
+  emojiPickerRef,
+  () => {
+    isEmojiPickerVisible.value = false
+  },
+  { ignore: [emojiToggleWrapperRef] }
+)
 
 const triggerFileUpload = () => {
   if (attachmentInput.value) {
