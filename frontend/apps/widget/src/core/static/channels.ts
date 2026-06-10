@@ -36,7 +36,7 @@ export const CHANNELS: Record<Channel, ChannelMeta> = {
 		mod: '1984',
 		prefix: 'МАХ: ',
 		placeholder: 'Введите ваш никнейм в MAX',
-		prompt: 'Укажите ваш никнейм в MAX\n\nАлександра свяжется с вами в MAX',
+		prompt: 'Укажите ваш номер телефона в формате +7 999 123-45-67\n\nАлександра свяжется с вами в MAX',
 		toHref: (raw) => (raw.length > 0 ? raw : null),
 	},
 	email: {
@@ -46,7 +46,7 @@ export const CHANNELS: Record<Channel, ChannelMeta> = {
 		prefix: 'Почта: ',
 		placeholder: 'Введите вашу почту',
 		prompt:
-			'Укажите ваш адрес электронной почты (например, example@mail.ru)\n\nАлександра свяжется с вами по почте',
+			'Укажите ваш адрес электронной почты (например, name@example.com)\n\nАлександра напишет вам в ближайшее время',
 		toHref: (raw) => (raw.length > 0 ? `mailto:${raw}` : null),
 	},
 };
