@@ -24,4 +24,11 @@
 	--cw-status-border: #f3f5f6;
 
 	--cw-border-color: #c6c6c6;
+	--cw-warn-color: #e05252;
+
+	--cw-panel-shadow:
+		-16px 0px 8px -4px rgb(24 39 75 / 0.08),
+		-8px 0px 6px -4px rgb(24 39 75 / 0.12);
+
+	--cw-transition-fast: 0.15s ease-in-out;
 }

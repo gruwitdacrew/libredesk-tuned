@@ -1,4 +1,5 @@
 import type { Escalation2State, LibredeskConfig } from '@types';
+import { safeStorage } from './storage';
 
 export interface EscalationPersisted {
 	state: Escalation2State;
@@ -27,6 +28,8 @@ export interface LibredeskMessage {
 		is_automated?: boolean;
 		is_csat?: boolean;
 		csat_uuid?: string;
+		csat_submitted?: boolean;
+		submitted_rating?: number;
 	};
 	status: string;
 	created_at: string;
@@ -51,45 +54,31 @@ interface ConversationDetailResponse {
 const SESSION_KEY_PREFIX = 'libredesk-session-';
 const ESCALATION_KEY_PREFIX = 'libredesk-escalation-';
 
+/** Создаёт REST-клиент LibreDesk. Токен сессии восстанавливается из хранилища сразу при создании. */
 export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 	let sessionToken: string | null = null;
 
-	const getSessionToken = (): string | null => sessionToken;
+	const sessionKey = (): string => `${SESSION_KEY_PREFIX}${config.inboxId}`;
+	const escalationKey = (): string => `${ESCALATION_KEY_PREFIX}${config.inboxId}`;
 
-	const loadStoredSession = (): string | null => {
-		try {
-			return localStorage.getItem(`${SESSION_KEY_PREFIX}${config.inboxId}`);
-		} catch {
-			return null;
-		}
-	};
+	const getSessionToken = (): string | null => sessionToken;
 
 	const storeSession = (token: string): void => {
 		sessionToken = token;
-		try {
-			localStorage.setItem(`${SESSION_KEY_PREFIX}${config.inboxId}`, token);
-		} catch {
-			// storage unavailable
-		}
+		safeStorage.set(sessionKey(), token);
 	};
 
 	const clearSession = (): void => {
 		sessionToken = null;
-		try {
-			localStorage.removeItem(`${SESSION_KEY_PREFIX}${config.inboxId}`);
-		} catch {
-			// storage unavailable
-		}
+		safeStorage.remove(sessionKey());
 	};
 
-	const escalationKey = (): string => `${ESCALATION_KEY_PREFIX}${config.inboxId}`;
-
 	const loadEscalation = (): EscalationPersisted | null => {
+		const raw = safeStorage.get(escalationKey());
+		if (raw === null) {
+			return null;
+		}
 		try {
-			const raw = localStorage.getItem(escalationKey());
-			if (raw === null) {
-				return null;
-			}
 			const parsed = JSON.parse(raw) as { state?: unknown; sent?: unknown };
 			const state = ESCALATION_STATES.includes(parsed.state as Escalation2State)
 				? (parsed.state as Escalation2State)
@@ -101,19 +90,11 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 	};
 
 	const storeEscalation = (value: EscalationPersisted): void => {
-		try {
-			localStorage.setItem(escalationKey(), JSON.stringify(value));
-		} catch {
-			// storage unavailable
-		}
+		safeStorage.set(escalationKey(), JSON.stringify(value));
 	};
 
 	const clearEscalation = (): void => {
-		try {
-			localStorage.removeItem(escalationKey());
-		} catch {
-			// storage unavailable
-		}
+		safeStorage.remove(escalationKey());
 	};
 
 	const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
@@ -164,14 +145,17 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 	const getConversation = (uuid: string): Promise<ConversationDetailResponse> =>
 		request<ConversationDetailResponse>(`/api/v1/widget/chat/conversations/${uuid}`);
 
-	const submitCsatFeedback = (csatUuid: string, rating: number, feedback: string): Promise<boolean> =>
+	const submitCsatFeedback = (
+		csatUuid: string,
+		rating: number,
+		feedback: string,
+	): Promise<boolean> =>
 		request<boolean>(`/api/v1/csat/${csatUuid}/response`, {
 			method: 'POST',
 			body: JSON.stringify({ rating, feedback }),
 		});
 
-	// Restore session from storage on creation
-	const stored = loadStoredSession();
+	const stored = safeStorage.get(sessionKey());
 	if (stored !== null) {
 		sessionToken = stored;
 	}

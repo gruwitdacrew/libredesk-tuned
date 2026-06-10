@@ -10,7 +10,7 @@
 @media (max-width: 480px) {
 	.panel__header {
 		column-gap: 1rem;
-		/* Clear the notch / status bar and rounded corners on fullscreen mobile. */
+		/* Отступ под чёлку / статус-бар и скруглённые углы в полноэкранном режиме. */
 		padding-top: max(0.75rem, env(safe-area-inset-top));
 		padding-left: max(0.75rem, env(safe-area-inset-left));
 		padding-right: max(0.75rem, env(safe-area-inset-right));
@@ -37,7 +37,7 @@
 	background-color: var(--cw-primary-hover);
 	border-radius: inherit;
 	transform: scale(0);
-	transition: transform 0.15s ease-in-out;
+	transition: transform var(--cw-transition-fast);
 }
 
 .panel__close:hover::before {

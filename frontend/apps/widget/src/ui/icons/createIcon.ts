@@ -12,12 +12,16 @@ const ICONS_SOURCE = {
 	avatar,
 } as const;
 
-type IconName = keyof typeof ICONS_SOURCE;
+export type IconName = keyof typeof ICONS_SOURCE;
 
 const parsedIcons: Partial<Record<IconName, SVGSVGElement>> = {};
 
 /**
- * использовать только для статических иконок!
+ * Создаёт SVG-иконку из инлайнового шаблона.
+ *
+ * Шаблон парсится один раз и кешируется, а наружу отдаётся клон. Использовать
+ * только для статических иконок: мутация результата не затрагивает кеш, но и не
+ * сохраняется между вызовами.
  */
 export default function createIcon(name: IconName): SVGSVGElement {
 	let icon = parsedIcons[name];

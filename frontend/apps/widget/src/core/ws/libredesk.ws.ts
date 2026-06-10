@@ -185,12 +185,20 @@ export const createLibredeskWs = (config: LibredeskConfig, handlers: WsHandlers)
 			joinInbox();
 			return;
 		}
+		// Сбрасываем состояние переподключения: иначе close() во время ожидающего
+		// reconnect оставляет isReconnecting=true и connect() навсегда выходит раньше.
+		if (reconnectTimer !== null) {
+			window.clearTimeout(reconnectTimer);
+			reconnectTimer = null;
+		}
+		isReconnecting = false;
 		manualClose = false;
 		connect();
 	};
 
 	const close = (): void => {
 		manualClose = true;
+		isReconnecting = false;
 		clearPing();
 		if (reconnectTimer !== null) {
 			window.clearTimeout(reconnectTimer);

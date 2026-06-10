@@ -1,1 +1,1 @@
-export type { BotStatus, MessageType, Escalation2State, CsatRating, WidgetStore, Message, MessageHandlers, WidgetContext, LibredeskConfig } from './widget.types';
+export type { BotStatus, MessageType, Channel, Escalation2State, CsatRating, WidgetStore, Message, MessageHandlers, WidgetContext, LibredeskConfig } from './widget.types';

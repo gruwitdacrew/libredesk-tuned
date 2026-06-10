@@ -11,7 +11,9 @@ export type BotStatus =
 
 export type MessageType = 'plain' | 'escalation_1' | 'escalation_2' | 'csat' | 'csat_reason';
 
-export type Escalation2State = null | 'select_channel' | 'telegram' | 'max' | 'email';
+export type Channel = 'telegram' | 'max' | 'email';
+
+export type Escalation2State = null | 'select_channel' | Channel;
 
 export type CsatRating = 1 | 2;
 
@@ -24,8 +26,11 @@ export interface WidgetStore {
 	isInitializing: boolean;
 	isAwaitingReply: boolean;
 	escalation2State: Escalation2State;
-	// True once the user has sent their contacts for the chosen channel — locks the
-	// escalation_2 channel buttons until "Начать новый диалог". Persisted across reloads.
+	/**
+	 * Становится true, когда пользователь отправил контакты для выбранного канала:
+	 * блокирует кнопки каналов escalation_2 до «Начать новый диалог». Сохраняется
+	 * между перезагрузками.
+	 */
 	escalationContactsSent: boolean;
 }
 
@@ -42,7 +47,7 @@ export interface Message {
 }
 
 export interface MessageHandlers {
-	onChannelSelect: (ch: 'telegram' | 'max' | 'email') => void;
+	onChannelSelect: (ch: Channel) => void;
 	onCsatRate: (csatUuid: string, rating: CsatRating) => void;
 	onCsatReason: (csatUuid: string, rating: CsatRating, reason: string) => Promise<void>;
 	onContactManager: () => void;

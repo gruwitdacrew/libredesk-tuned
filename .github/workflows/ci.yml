@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches:
-      - main
+      - deploy
 
 jobs:
   deploy:
@@ -21,4 +21,9 @@ jobs:
         run: make
 
       - name: Deploy
+<<<<<<< HEAD
         run: docker compose up -d --build
+=======
+        run: docker compose up -d --build
+        
+>>>>>>> 8c35bff94621092063ac4ec27b919458f0c3c15c
