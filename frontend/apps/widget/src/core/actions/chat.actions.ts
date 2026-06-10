@@ -105,7 +105,11 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		patch((s) => ({
 			botStatus: s.botStatus === 'escalated' ? 'escalated' : 'online',
 			isAwaitingReply: false,
-			escalation2State: type === 'escalation_2' ? 'select_channel' : s.escalation2State,
+			// Повторный escalation_2 не должен затирать уже выбранный канал.
+			escalation2State:
+				type === 'escalation_2' && !isChannel(s.escalation2State)
+					? 'select_channel'
+					: s.escalation2State,
 			messages: [...s.messages, mapMessage(msg)],
 		}));
 	};
@@ -151,8 +155,12 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		setBotStatus(isThinking, 'long_thinking');
 	};
 
+	/** При ошибке также снимаем флаг ожидания ответа — иначе лоадер крутится бесконечно. */
 	const setBotError = (isError: boolean): void => {
-		setBotStatus(isError, 'error');
+		patch((s) => ({
+			botStatus: isError ? 'error' : 'online',
+			isAwaitingReply: isError ? false : s.isAwaitingReply,
+		}));
 	};
 
 	/** Финализирует эскалацию. На шаге контактов (escalation2State — выбранный канал) событие Closed завершает его и сбрасывает состояние. */

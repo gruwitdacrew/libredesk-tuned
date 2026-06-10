@@ -28,6 +28,8 @@ export interface LibredeskMessage {
 		is_automated?: boolean;
 		is_csat?: boolean;
 		csat_uuid?: string;
+		csat_submitted?: boolean;
+		submitted_rating?: number;
 	};
 	status: string;
 	created_at: string;

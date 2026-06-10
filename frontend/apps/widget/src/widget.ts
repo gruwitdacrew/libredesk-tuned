@@ -16,10 +16,21 @@ import {
 const resolveConfig = (): LibredeskConfig => {
 	const params = new URLSearchParams(window.location.search);
 	const global = (window as { WebChatConfig?: LibredeskConfig }).WebChatConfig;
-	return {
-		baseUrl: global?.baseUrl ?? 'http://192.168.19.213:9000',
+	const config: LibredeskConfig = {
+		// Пустой baseUrl → относительные запросы (тот же origin / dev-прокси). При
+		// встраивании на сторонний сайт baseUrl нужно задавать через WebChatConfig.
+		baseUrl: global?.baseUrl ?? '',
 		inboxId: params.get('inbox_id') ?? global?.inboxId ?? '',
 	};
+	if (config.inboxId === '') {
+		console.warn(
+			'[WebChat] inboxId не задан (WebChatConfig.inboxId или ?inbox_id) — запросы/WS и ключи хранилища будут некорректны.',
+		);
+	}
+	if (config.baseUrl === '') {
+		console.warn('[WebChat] baseUrl не задан (WebChatConfig.baseUrl) — используется текущий origin.');
+	}
+	return config;
 };
 
 export class WebChat extends HTMLElement {
