@@ -95,15 +95,9 @@
 	display: flex;
 	gap: 0.5rem;
 	margin-top: 0.5rem;
-	flex-wrap: wrap;
-
-	& :not(:last-child){
-		flex: 1 0 40%
-	}
-
-	& :last-child{
-		flex: 3 0 40%;
-	}
+	flex-wrap: nowrap;
+	width: 100%;
+	justify-content: space-between;
 }
 
 .escalation-btns__btn {
@@ -120,6 +114,7 @@
 	cursor: pointer;
 	color: var(--cw-text-color);
 	transition: background-color var(--cw-transition-fast);
+	flex-basis: 33.3%;
 
 
 	svg {
