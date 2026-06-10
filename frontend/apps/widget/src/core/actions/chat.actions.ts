@@ -3,6 +3,7 @@ import type { BotStatus, CsatRating, Channel, MessageHandlers, Message, WidgetSt
 import type { LibredeskApi, LibredeskMessage } from '../api/libredesk';
 import { getCsatReasonMessage } from '../static/csatMessages';
 import { CHANNELS, isChannel } from '../static/channels';
+import { isEscalatedStatus, isClosedStatus } from '../static/conversationStatus';
 import greetMessage from '../static/greetMessage';
 import { mapMessage, resolveType, sortByTime } from './message.mapper';
 
@@ -78,7 +79,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 					receiveMessage(msg);
 				}
 
-				if (data.conversation.status === 'Escalation') {
+				if (isEscalatedStatus(data.conversation.status)) {
 					setBotEscalated(true);
 				}
 			} else {
@@ -216,13 +217,11 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 
 			const { conversation, messages } = await api.getConversation(uuid);
 			const escalation = api.loadEscalation();
+			const status = conversation.status;
 
 			patch((s) => ({
 				conversationUuid: conversation.uuid,
-				botStatus:
-					conversation.status === 'Escalation' || conversation.status === 'Closed'
-						? 'escalated'
-						: 'online',
+				botStatus: isEscalatedStatus(status) || isClosedStatus(status) ? 'escalated' : 'online',
 				escalation2State: escalation?.state ?? s.escalation2State,
 				escalationContactsSent: escalation?.sent ?? s.escalationContactsSent,
 				messages: [greetMessage, ...sortByTime(messages.map(mapMessage))],
