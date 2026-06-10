@@ -82,7 +82,6 @@ export class WebChat extends HTMLElement {
       },
       () => {
         chatActions.resetSession()
-        void chatActions.initOnLoad()
       },
       createMessageHandlers(chatActions)
     )

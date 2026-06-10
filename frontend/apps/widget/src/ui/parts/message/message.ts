@@ -12,17 +12,17 @@ export const createMessage = (
 ): HTMLElement => {
   const messageText = el('div', { className: 'message__text' })
   const time = el('span', { className: 'message__time' })
-  if (msg.author === 'bot') {
+  const isBot = msg.author === 'bot'
+
+  if (isBot) {
     messageText.innerHTML = renderContent(msg.content)
   } else {
     messageText.textContent = msg.content
   }
 
-  const message = el(
-    'div',
-    { className: msg.author === 'bot' ? 'message' : 'message message--user' },
-    [messageText]
-  )
+  const message = el('div', { className: isBot ? 'message' : 'message message--user' }, [
+    messageText
+  ])
 
   if (messageTime.length > 0) {
     time.innerText = messageTime

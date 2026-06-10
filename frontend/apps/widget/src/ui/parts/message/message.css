@@ -79,13 +79,12 @@
 
 .message-wrapper {
   .message:not(.message--user) {
+    .message__time {
+      align-self: flex-start;
+    }
     .message__text {
       background-color: var(--cw-white);
       border-radius: 1rem 1rem 1rem 0;
-    }
-
-    .message__time {
-      align-self: flex-start;
     }
   }
 }
