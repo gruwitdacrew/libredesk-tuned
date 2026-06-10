@@ -13,11 +13,13 @@ import (
 )
 
 var (
-	StatusOpen     = "Open"
-	StatusReplied  = "Replied"
-	StatusResolved = "Resolved"
-	StatusClosed   = "Closed"
-	StatusSnoozed  = "Snoozed"
+	StatusOpen           = "Открыт"
+	StatusReplied        = "Replied"
+	StatusResolved       = "Обработан"
+	StatusClosed         = "Закрыт"
+	StatusEscalation     = "Эскалация"
+	StatusContactCollect = "ЗапросКонтактов"
+	StatusSnoozed        = "Отложен"
 
 	AssigneeTypeTeam = "team"
 	AssigneeTypeUser = "user"
