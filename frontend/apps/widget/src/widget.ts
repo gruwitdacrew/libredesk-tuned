@@ -40,18 +40,9 @@ export class WebChat extends HTMLElement {
   private subscribers = new Set<() => void>()
 
   private store = createStore<WidgetStore>({
-    botStatus: 'escalated',
-    messages: [
-      greetMessage,
-      {
-        id: '312213213',
-        content: '123213',
-        type: 'escalation_2',
-        author: 'bot',
-        timestamp: Date.now()
-      }
-    ],
-    escalation2State: 'select_channel',
+    botStatus: 'online',
+    messages: [greetMessage],
+    escalation2State: null,
     escalationContactsSent: false,
     isOpen: false,
     sessionToken: null,
