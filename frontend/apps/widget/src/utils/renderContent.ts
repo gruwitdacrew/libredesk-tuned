@@ -20,7 +20,7 @@ const ensureLinkHook = (): void => {
 /** Парсит markdown бота в HTML и санитизирует перед вставкой через innerHTML: разрешён только безопасный набор тегов, ссылки открываются в новой вкладке. */
 export const renderContent = (text: string): string => {
 	ensureLinkHook();
-	const html = marked.parse(text, { async: false });
+	const html = marked.parse(text, { async: false, breaks: true });
 	return DOMPurify.sanitize(html, {
 		ALLOWED_TAGS: [
 			'p', 'br', 'hr',
