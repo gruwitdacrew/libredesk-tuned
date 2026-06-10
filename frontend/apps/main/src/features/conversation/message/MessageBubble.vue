@@ -45,15 +45,8 @@
       </template>
 
       <!-- Bubble Wrapper with max 80% width -->
-      <div
-        class="w-4/5"
-        :class="{ 'flex justify-end': isOutgoing }"
-        style="contain: inline-size"
-      >
-        <div
-          class="flex flex-col justify-end message-bubble"
-          :class="bubbleClasses"
-        >
+      <div class="w-4/5" :class="{ 'flex justify-end': isOutgoing }" style="contain: inline-size">
+        <div class="flex flex-col justify-end message-bubble" :class="bubbleClasses">
           <!-- Message Envelope -->
           <MessageEnvelope :message="message" v-if="showEnvelope" />
 
@@ -114,7 +107,9 @@
             @click="toggleQuote"
             class="text-xs cursor-pointer text-muted-foreground px-2 py-1 w-max hover:bg-muted hover:text-primary rounded transition-colors duration-200"
           >
-            {{ showQuotedText ? t('conversation.hideQuotedText') : t('conversation.showQuotedText') }}
+            {{
+              showQuotedText ? t('conversation.hideQuotedText') : t('conversation.showQuotedText')
+            }}
           </div>
 
           <!-- Attachments -->
@@ -206,6 +201,7 @@ import MessageEnvelope from './MessageEnvelope.vue'
 import CSATResponseDisplay from './CSATResponseDisplay.vue'
 import api from '@main/api'
 import { containsQuoteMarkers } from '@shared-ui/utils/quotedContent.js'
+import { marked } from 'marked'
 
 const extendedCssProperties = [...allowedCssProperties, 'transform', 'transform-origin']
 
@@ -277,7 +273,7 @@ const sanitizedContent = computed(() => {
   if (props.message.meta?.is_csat) {
     return t('globals.messages.pleaseRateConversation')
   }
-  return props.message.content || ''
+  return marked(props.message.content, { breaks: true, async: false }) || ''
 })
 
 const nonInlineAttachments = computed(() =>
@@ -298,7 +294,12 @@ const isPrivateMessage = computed(() => isOutgoing.value && props.message.privat
 const showCheckCheck = computed(
   () => isOutgoing.value && props.message.status === 'sent' && !isPrivateMessage.value
 )
-const showRetry = computed(() => isOutgoing.value && props.message.status === 'failed' && props.message.sender_id === userStore.userID)
+const showRetry = computed(
+  () =>
+    isOutgoing.value &&
+    props.message.status === 'failed' &&
+    props.message.sender_id === userStore.userID
+)
 
 const retryMessage = (msg) => {
   api.retryMessage(convStore.current.uuid, msg.uuid)
