@@ -1348,7 +1348,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 		answer, msg_type := aiReply.PrepareAnswer(variant)
 
 		if msg_type == "msg_escalation_1" {
-			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
+			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusEscalation, "", user)
 			if err != nil {
 				return fmt.Errorf("updating conversation status: %w", err)
 			}
