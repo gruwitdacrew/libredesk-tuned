@@ -63,12 +63,14 @@
 
 .message-wrapper:has(.message.message--user) {
   align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+
+  .message__time {
+    align-self: flex-end;
+  }
 
   .message.message--user {
-    .message__time {
-      align-self: flex-end;
-    }
-
     .message__text {
       background-color: var(--cw-primary);
       color: var(--cw-white);
