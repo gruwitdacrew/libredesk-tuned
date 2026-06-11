@@ -2,7 +2,7 @@
   <div>
     <ConversationSideBarContact class="p-4" />
     <Accordion type="multiple" collapsible v-model="accordionState">
-      <AccordionItem value="actions" class="accordion-item">
+      <AccordionItem value="actions" class="accordion-item" v-if="false">
         <AccordionTrigger class="accordion-trigger">
           {{ $t('globals.terms.action', 2) }}
         </AccordionTrigger>

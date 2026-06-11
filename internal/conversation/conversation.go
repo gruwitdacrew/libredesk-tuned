@@ -1342,13 +1342,17 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 
 		// Получаем variant (по умолчанию 1, если не задан)
 		variant := 1
-		if user.EscalationVariant.Valid && user.EscalationVariant.Int <= 2 {
-			variant = user.EscalationVariant.Int
+		visitor, err := m.userStore.Get(conv.ContactID, "", []string{umodels.UserTypeVisitor})
+		if err != nil {
+			return fmt.Errorf("error get user: %w", err)
+		}
+		if visitor.EscalationVariant.Valid && visitor.EscalationVariant.Int <= 2 {
+			variant = visitor.EscalationVariant.Int
 		}
 		answer, msg_type := aiReply.PrepareAnswer(variant)
 
 		if msg_type == "msg_escalation_1" {
-			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusClosed, "", user)
+			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusEscalation, "", user)
 			if err != nil {
 				return fmt.Errorf("updating conversation status: %w", err)
 			}
@@ -1365,7 +1369,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 
 		// Automated ai replies always go to the contact only. CCs from the
 		// conversation history are deliberately not carried forward.
-		_, err := m.QueueReply(
+		_, err = m.QueueReply(
 			[]mmodels.Media{},
 			conv.InboxID,
 			user.ID,

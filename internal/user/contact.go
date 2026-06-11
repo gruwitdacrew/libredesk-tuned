@@ -43,7 +43,7 @@ func (u *Manager) CreateContact(user *models.User) error {
 		}
 
 		// Upsert by ext_id - creates new or updates email/name on ext_id conflict.
-		if err := u.q.InsertContactWithExtID.QueryRow(user.Email, user.FirstName, user.LastName, password, user.AvatarURL, user.ExternalUserID, user.CustomAttributes, user.EscalationVariant).Scan(&user.ID); err != nil {
+		if err := u.q.InsertContactWithExtID.QueryRow(user.Email, user.FirstName, user.LastName, password, user.AvatarURL, user.ExternalUserID, user.CustomAttributes).Scan(&user.ID); err != nil {
 			u.lo.Error("error inserting contact with external ID", "error", err)
 			return fmt.Errorf("inserting contact with external ID: %w", err)
 		}

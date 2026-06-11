@@ -42,7 +42,8 @@ export interface LibredeskConversation {
 
 interface InitResponse {
 	conversation: LibredeskConversation;
-	session_token: string;
+	// Бэк отдаёт токен только при создании нового визитёра; у вернувшегося устройства его нет.
+	session_token?: string;
 	messages: LibredeskMessage[];
 }
 
@@ -53,6 +54,7 @@ interface ConversationDetailResponse {
 
 const SESSION_KEY_PREFIX = 'libredesk-session-';
 const ESCALATION_KEY_PREFIX = 'libredesk-escalation-';
+const CONVERSATION_KEY_PREFIX = 'libredesk-conversation-';
 
 /** Создаёт REST-клиент LibreDesk. Токен сессии восстанавливается из хранилища сразу при создании. */
 export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
@@ -60,6 +62,7 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 
 	const sessionKey = (): string => `${SESSION_KEY_PREFIX}${config.inboxId}`;
 	const escalationKey = (): string => `${ESCALATION_KEY_PREFIX}${config.inboxId}`;
+	const conversationKey = (): string => `${CONVERSATION_KEY_PREFIX}${config.inboxId}`;
 
 	const getSessionToken = (): string | null => sessionToken;
 
@@ -95,6 +98,19 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 
 	const clearEscalation = (): void => {
 		safeStorage.remove(escalationKey());
+	};
+
+	// Активный диалог устройства: null — ключа нет (миграция со старого токена),
+	// '' — свежий старт после «нового чата», иначе — UUID показываемого диалога.
+	const getActiveConversation = (): string | null => safeStorage.get(conversationKey());
+
+	const storeActiveConversation = (uuid: string): void => {
+		safeStorage.set(conversationKey(), uuid);
+	};
+
+	/** Помечает чат свежим (сентинел ''), не удаляя ключ: после перезагрузки restoreSession покажет приветствие, а не прежний диалог. */
+	const clearActiveConversation = (): void => {
+		safeStorage.set(conversationKey(), '');
 	};
 
 	const request = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
@@ -172,6 +188,9 @@ export const createLibredeskApi = (config: LibredeskConfig): LibredeskApi => {
 		loadEscalation,
 		storeEscalation,
 		clearEscalation,
+		getActiveConversation,
+		storeActiveConversation,
+		clearActiveConversation,
 	};
 };
 
@@ -187,4 +206,7 @@ export interface LibredeskApi {
 	loadEscalation: () => EscalationPersisted | null;
 	storeEscalation: (value: EscalationPersisted) => void;
 	clearEscalation: () => void;
+	getActiveConversation: () => string | null;
+	storeActiveConversation: (uuid: string) => void;
+	clearActiveConversation: () => void;
 }

@@ -838,15 +838,12 @@ func resolveOrCreateExternalContact(app *App, claims Claims) (int, error) {
 
 	// Create contact if not found.
 	if claims.ExternalUserID != "" {
-		escalationVariant := mathRand.Intn(2) + 1
-
 		user := umodels.User{
-			FirstName:         claims.FirstName,
-			LastName:          claims.LastName,
-			Email:             null.NewString(claims.Email, true),
-			ExternalUserID:    null.NewString(claims.ExternalUserID, true),
-			CustomAttributes:  marshalCustomAttributes(claims.ContactCustomAttributes, app),
-			EscalationVariant: null.IntFrom(escalationVariant),
+			FirstName:        claims.FirstName,
+			LastName:         claims.LastName,
+			Email:            null.NewString(claims.Email, true),
+			ExternalUserID:   null.NewString(claims.ExternalUserID, true),
+			CustomAttributes: marshalCustomAttributes(claims.ContactCustomAttributes, app),
 		}
 		if err := app.user.CreateContact(&user); err != nil {
 			return 0, err
@@ -860,7 +857,7 @@ func resolveOrCreateExternalContact(app *App, claims Claims) (int, error) {
 // createVisitorContact creates a new visitor contact from form data.
 func createVisitorContact(app *App, formData map[string]any, config livechat.Config, inbox imodels.Inbox) (umodels.User, string, map[string]any, error) {
 	// Validate form data and get final name/email for new visitor.
-	finalName, finalEmail, err := validateFormData(formData, config, nil)
+	_, finalEmail, err := validateFormData(formData, config, nil)
 	if err != nil {
 		return umodels.User{}, "", nil, err
 	}
@@ -869,9 +866,10 @@ func createVisitorContact(app *App, formData map[string]any, config livechat.Con
 	formContactAttrs, formConvoAttrs := validateCustomAttributes(formData, config, app)
 
 	visitor := umodels.User{
-		Email:            null.NewString(finalEmail, finalEmail != ""),
-		FirstName:        finalName,
-		CustomAttributes: marshalCustomAttributes(formContactAttrs, app),
+		Email:             null.NewString(finalEmail, finalEmail != ""),
+		FirstName:         "Пользователь",
+		CustomAttributes:  marshalCustomAttributes(formContactAttrs, app),
+		EscalationVariant: null.IntFrom(mathRand.Intn(2) + 1),
 	}
 
 	if err := app.user.CreateVisitor(&visitor); err != nil {

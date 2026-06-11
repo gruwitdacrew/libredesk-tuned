@@ -31,7 +31,10 @@
             class="text-sm font-medium text-primary hover:underline truncate"
           >{{ inbox.name }}</router-link>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            <span
+              class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize"
+              :class="getChannelStyle(inbox.channel).badge"
+            >
               {{ inbox.channel }}
             </span>
             <span
@@ -77,6 +80,7 @@ import { useI18n } from 'vue-i18n'
 import { format } from 'date-fns'
 import LoadingOverlay from '@main/components/layout/LoadingOverlay.vue'
 import { useInboxStore } from '@main/stores/inbox'
+import { getChannelStyle } from '@main/utils/channel'
 import api from '@main/api'
 
 const isMobile = useMediaQuery('(max-width: 768px)')
@@ -166,7 +170,12 @@ const columns = [
       return h('div', { class: 'text-center' }, t('globals.terms.channel'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, row.getValue('channel'))
+      const channel = row.getValue('channel')
+      return h('div', { class: 'text-center' },
+        h('span', {
+          class: `inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${getChannelStyle(channel).badge}`
+        }, channel)
+      )
     }
   },
   {
