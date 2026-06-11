@@ -4,11 +4,11 @@
  * регистронезависимо (см. предикаты ниже).
  */
 export const CONVERSATION_STATUS = {
-  OPEN: 'Открытый',
+  OPEN: 'Открыт',
   ESCALATION: 'Эскалация',
   /** Обрабатывается как ESCALATION. */
   REQUEST_CONTACTS: 'ЗапросКонтактов',
-  CLOSED: 'Закрытый',
+  CLOSED: 'Закрыт',
   PROCESSED: 'Обработан'
 } as const
 
