@@ -29,7 +29,7 @@ func handleShowCSAT(r *fastglue.Request) error {
 		uuid = r.RequestCtx.UserValue("uuid").(string)
 	)
 
-	csat, err := app.csat.Get(uuid)
+	csat, err := app.csat.Get(uuid, 0)
 	if err != nil {
 		return app.tmpl.RenderWebPage(r.RequestCtx, "error", map[string]interface{}{
 			"Data": map[string]interface{}{
@@ -109,7 +109,7 @@ func handleShowCSATWidget(r *fastglue.Request) error {
 		uuid = r.RequestCtx.UserValue("uuid").(string)
 	)
 
-	csat, err := app.csat.Get(uuid)
+	csat, err := app.csat.Get(uuid, 0)
 	if err != nil {
 		return app.tmpl.RenderWebPage(r.RequestCtx, "error", map[string]interface{}{
 			"Data": map[string]interface{}{
@@ -158,7 +158,7 @@ func handleSubmitCSATResponse(r *fastglue.Request) error {
 		req.Feedback = req.Feedback[:maxCsatFeedbackLength]
 	}
 
-	csat, err := app.csat.Get(uuid)
+	csat, err := app.csat.Get(uuid, 0)
 	if err != nil {
 		return sendErrorEnvelope(r, err)
 	}

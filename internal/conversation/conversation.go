@@ -166,7 +166,7 @@ type settingsStore interface {
 
 type csatStore interface {
 	Create(conversationID int) (csatModels.CSATResponse, error)
-	Get(uuid string) (csatModels.CSATResponse, error)
+	Get(uuid string, conversationID int) (csatModels.CSATResponse, error)
 	MakePublicURL(appBaseURL, uuid string) string
 }
 
@@ -1439,10 +1439,13 @@ func (m *Manager) RemoveConversationAssignee(uuid, typ string, actor umodels.Use
 func (m *Manager) SendCSATReply(actorUserID int, conversation models.Conversation) error {
 	csatResp, err := m.csatStore.Create(conversation.ID)
 	if err != nil {
-		if errors.Is(err, csat.ErrCSATAlreadyExists) {
-			return nil
+		if !errors.Is(err, csat.ErrCSATAlreadyExists) {
+			return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
 		}
-		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+		csatResp, err = m.csatStore.Get("", conversation.ID)
+		if err != nil {
+			return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+		}
 	}
 	// appRootURL, err := m.settingsStore.GetAppRootURL()
 	// if err != nil {
@@ -1732,7 +1735,7 @@ func (m *Manager) ProcessCSATStatus(messages []models.Message) {
 			rating      int
 			feedback    string
 		)
-		csat, err := m.csatStore.Get(csatUUID)
+		csat, err := m.csatStore.Get(csatUUID, 0)
 		if err == nil && csat.ResponseTimestamp.Valid {
 			isSubmitted = true
 			rating = csat.Rating

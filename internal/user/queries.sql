@@ -201,8 +201,24 @@ UPDATE users SET external_user_id = $2, updated_at = now()
 WHERE id = $1 AND type = 'contact' AND deleted_at IS NULL;
 
 -- name: insert-visitor
-INSERT INTO users (email, type, first_name, last_name, custom_attributes, escalation_variant)
-VALUES ($1, 'visitor', $2, $3, $4, $5)
+INSERT INTO users (
+    id,
+    email,
+    type,
+    first_name,
+    last_name,
+    custom_attributes,
+    escalation_variant
+)
+VALUES (
+    nextval('users_id_seq'),
+    $1,
+    'visitor',
+    'Пользователь ' || currval('users_id_seq'),
+    $2,
+    $3,
+    $4
+)
 RETURNING *;
 
 -- name: update-last-login-at

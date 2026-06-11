@@ -74,13 +74,13 @@ func (m *Manager) Create(conversationID int) (models.CSATResponse, error) {
 		m.lo.Error("error creating CSAT", "error", err)
 		return rsp, envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
 	}
-	return m.Get(uuid)
+	return m.Get(uuid, 0)
 }
 
 // Get retrieves the CSAT for the given UUID.
-func (m *Manager) Get(uuid string) (models.CSATResponse, error) {
+func (m *Manager) Get(uuid string, conversationID int) (models.CSATResponse, error) {
 	var csat models.CSATResponse
-	err := m.q.Get.Get(&csat, uuid)
+	err := m.q.Get.Get(&csat, uuid, conversationID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return csat, envelope.NewError(envelope.InputError, m.i18n.T("validation.notFoundCsatSurvey"), nil)

@@ -15,7 +15,9 @@ SELECT id,
     meta,
     response_timestamp
 FROM csat_responses
-WHERE uuid = $1;
+WHERE 
+    (NULLIF($1, '')::uuid IS NOT NULL AND uuid = NULLIF($1, '')::uuid)
+    OR ($2::int > 0 AND conversation_id = $2);
 
 -- name: update
 UPDATE csat_responses
