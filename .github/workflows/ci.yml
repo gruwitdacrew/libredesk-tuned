@@ -9,17 +9,16 @@ jobs:
   deploy:
     runs-on: self-hosted
 
-    steps:   
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build application
-        env: 
-            VITE_ESCALATION_TELEGRAM: ${{ vars.VITE_ESCALATION_TELEGRAM }}
-            VITE_ESCALATION_MAX: ${{ vars.VITE_ESCALATION_MAX }}
-            VITE_ESCALATION_EMAIL: ${{ vars.VITE_ESCALATION_EMAIL }}
+        env:
+          VITE_ESCALATION_TELEGRAM: ${{ vars.VITE_ESCALATION_TELEGRAM }}
+          VITE_ESCALATION_MAX: ${{ vars.VITE_ESCALATION_MAX }}
+          VITE_ESCALATION_EMAIL: ${{ vars.VITE_ESCALATION_EMAIL }}
         run: make
 
       - name: Deploy
         run: docker compose up -d --build
-        
