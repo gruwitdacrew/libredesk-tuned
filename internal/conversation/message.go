@@ -579,13 +579,10 @@ func (m *Manager) InsertMessage(message *models.Message) error {
 	// Add this user as a participant if not already present.
 	m.addConversationParticipant(message.SenderID, message.ConversationUUID)
 
-	// Skip updating last_message and broadcasting for continuity emails.
-	if !message.IsContinuityMessage() {
-		// Hide CSAT message content as it contains a public link to the survey.
+	// Skip updating last_message and broadcasting for continuity emails and csat.
+	if !(message.IsContinuityMessage() || message.HasCSAT()) {
+
 		lastMessage := message.TextContent
-		if message.HasCSAT() {
-			lastMessage = "Please rate your experience with us"
-		}
 
 		// HTML2Text drops <img> tags, so image-only messages have empty text. Fall back to a media-type preview.
 		if strings.TrimSpace(lastMessage) == "" {
