@@ -1,7 +1,10 @@
 <template>
   <div>
     <Dialog v-model:open="dialogOpen">
-      <DialogContent class="max-w-5xl w-[calc(100%-1rem)] sm:w-full h-[95dvh] sm:h-[90vh] flex flex-col p-3 sm:p-6 overflow-hidden" :disableOutsidePointerEvents="false">
+      <DialogContent
+        class="max-w-5xl w-[calc(100%-1rem)] sm:w-full h-[95dvh] sm:h-[90vh] flex flex-col p-3 sm:p-6 overflow-hidden"
+        :disableOutsidePointerEvents="false"
+      >
         <DialogHeader>
           <DialogTitle>
             {{ $t('conversation.newConversation') }}
@@ -14,240 +17,164 @@
           <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
             <!-- Form Fields Section -->
             <div class="space-y-4 pb-2 flex-shrink-0">
-            <div class="space-y-2">
-              <FormField name="contact_email">
-                <FormItem class="relative">
-                  <FormLabel>{{ $t('globals.terms.email') }}</FormLabel>
-                  <FormControl>
-                    <Input
-                      ref="emailInputRef"
-                      type="email"
-                      :placeholder="t('conversation.searchContact')"
-                      v-model="emailQuery"
-                      @input="handleSearchContacts"
-                      @keydown="handleSearchKeydown"
-                      autocomplete="off"
-                    />
-                  </FormControl>
-                  <FormMessage />
-
-                  <div
-                    v-if="searchResults.length"
-                    class="absolute w-full z-50 mt-1 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-                  >
-                    <ul class="max-h-60 overflow-y-auto" role="listbox">
-                      <li
-                        v-for="(contact, index) in searchResults"
-                        :key="contact.email"
-                        @click="selectContact(contact)"
-                        role="option"
-                        :aria-selected="index === highlightedIndex"
-                        class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-200"
-                        :class="
-                          index === highlightedIndex
-                            ? 'bg-accent text-accent-foreground'
-                            : 'hover:bg-accent hover:text-accent-foreground'
-                        "
-                      >
-                        <div>
-                          <p class="font-medium">
-                            {{ contact.first_name }} {{ contact.last_name }}
-                          </p>
-                          <p class="text-xs text-muted-foreground">{{ contact.email }}</p>
-                          <div
-                            v-if="contact.external_user_id"
-                            class="flex items-center gap-1 text-xs text-muted-foreground"
-                          >
-                            <IdCard :size="12" class="flex-shrink-0" />
-                            <span class="truncate">{{ contact.external_user_id }}</span>
-                          </div>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </FormItem>
-              </FormField>
-
-              <!-- Name Group -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <FormField v-slot="{ componentField }" name="first_name">
-                  <FormItem>
-                    <FormLabel>{{ $t('globals.terms.firstName') }}</FormLabel>
+              <div class="space-y-2">
+                <FormField name="contact_email">
+                  <FormItem class="relative">
+                    <FormLabel>{{ $t('globals.terms.email') }}</FormLabel>
                     <FormControl>
                       <Input
-                        type="text"
-                        placeholder=""
-                        v-bind="componentField"
-                        :disabled="!!selectedContact"
-                        required
+                        ref="emailInputRef"
+                        type="email"
+                        :placeholder="t('conversation.searchContact')"
+                        v-model="emailQuery"
+                        @input="handleSearchContacts"
+                        @keydown="handleSearchKeydown"
+                        autocomplete="off"
                       />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                </FormField>
 
-                <FormField v-slot="{ componentField }" name="last_name">
-                  <FormItem>
-                    <FormLabel>{{ $t('globals.terms.lastName') }}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder=""
-                        v-bind="componentField"
-                        :disabled="!!selectedContact"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </div>
-
-              <!-- Subject and Inbox Group -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <FormField v-slot="{ componentField }" name="subject">
-                  <FormItem>
-                    <FormLabel>{{ $t('globals.terms.subject') }}</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="" v-bind="componentField" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-
-                <FormField v-slot="{ componentField }" name="inbox_id">
-                  <FormItem>
-                    <FormLabel>{{ $t('globals.terms.inbox') }}</FormLabel>
-                    <FormControl>
-                      <Select v-bind="componentField">
-                        <SelectTrigger>
-                          <SelectValue :placeholder="t('placeholders.selectInbox')" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem
-                              v-for="option in inboxStore.emailOptions"
-                              :key="option.value"
-                              :value="option.value"
+                    <div
+                      v-if="searchResults.length"
+                      class="absolute w-full z-50 mt-1 rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+                    >
+                      <ul class="max-h-60 overflow-y-auto" role="listbox">
+                        <li
+                          v-for="(contact, index) in searchResults"
+                          :key="contact.email"
+                          @click="selectContact(contact)"
+                          role="option"
+                          :aria-selected="index === highlightedIndex"
+                          class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-200"
+                          :class="
+                            index === highlightedIndex
+                              ? 'bg-accent text-accent-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          "
+                        >
+                          <div>
+                            <p class="font-medium">
+                              {{ contact.first_name }} {{ contact.last_name }}
+                            </p>
+                            <p class="text-xs text-muted-foreground">{{ contact.email }}</p>
+                            <div
+                              v-if="contact.external_user_id"
+                              class="flex items-center gap-1 text-xs text-muted-foreground"
                             >
-                              {{ option.label }}
-                            </SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </div>
-
-              <!-- Assignment Group -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <!-- Set assigned team -->
-                <FormField v-slot="{ componentField }" name="team_id">
-                  <FormItem>
-                    <FormLabel>
-                      {{ $t('actions.assignTeam') }}
-                      ({{ $t('globals.terms.optional') }})
-                    </FormLabel>
-                    <FormControl>
-                      <SelectComboBox
-                        v-bind="componentField"
-                        :items="[
-                          { value: 'none', label: t('globals.terms.none') },
-                          ...teamStore.options
-                        ]"
-                        :placeholder="t('placeholders.selectTeam')"
-                        type="team"
-                      />
-                    </FormControl>
-                    <FormMessage />
+                              <IdCard :size="12" class="flex-shrink-0" />
+                              <span class="truncate">{{ contact.external_user_id }}</span>
+                            </div>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
                   </FormItem>
                 </FormField>
 
-                <!-- Set assigned agent -->
-                <FormField v-slot="{ componentField }" name="agent_id">
-                  <FormItem>
-                    <FormLabel>
-                      {{ $t('actions.assignAgent') }}
-                      ({{ $t('globals.terms.optional') }})
-                    </FormLabel>
-                    <FormControl>
-                      <SelectComboBox
-                        v-bind="componentField"
-                        :items="[
-                          { value: 'none', label: t('globals.terms.none') },
-                          ...uStore.options
-                        ]"
-                        :placeholder="t('placeholders.selectAgent')"
-                        type="user"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
+                <!-- Name Group -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <FormField v-slot="{ componentField }" name="first_name">
+                    <FormItem>
+                      <FormLabel>{{ $t('globals.terms.firstName') }}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder=""
+                          v-bind="componentField"
+                          :disabled="!!selectedContact"
+                          required
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+
+                  <FormField v-slot="{ componentField }" name="last_name">
+                    <FormItem>
+                      <FormLabel>{{ $t('globals.terms.lastName') }}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder=""
+                          v-bind="componentField"
+                          :disabled="!!selectedContact"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </div>
+
+                <!-- Subject and Inbox Group -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <FormField v-slot="{ componentField }" name="subject">
+                    <FormItem>
+                      <FormLabel>{{ $t('globals.terms.subject') }}</FormLabel>
+                      <FormControl>
+                        <Input type="text" placeholder="" v-bind="componentField" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </div>
               </div>
             </div>
+
+            <!-- Message Editor Section -->
+            <div class="flex-1 flex flex-col min-h-[180px] mt-4">
+              <FormField v-slot="{ componentField }" name="content">
+                <FormItem class="flex flex-col h-full">
+                  <FormLabel>{{ $t('globals.terms.message') }}</FormLabel>
+                  <FormControl class="flex-1 flex flex-col min-h-0">
+                    <div class="flex flex-col h-full">
+                      <Editor
+                        v-model:htmlContent="componentField.modelValue"
+                        @update:htmlContent="(value) => componentField.onChange(value)"
+                        :placeholder="t('editor.hint.newLineCtrlK')"
+                        :insertContent="insertContent"
+                        :autoFocus="false"
+                        :enableInlineImages="true"
+                        class="w-full flex-1 overflow-y-auto p-2 box min-h-0"
+                        @send="createConversation"
+                        @filesDropped="uploadFiles"
+                      />
+
+                      <MacroActionsPreview
+                        v-if="
+                          conversationStore.getMacro(MACRO_CONTEXT.NEW_CONVERSATION).actions
+                            ?.length > 0
+                        "
+                        :actions="
+                          conversationStore.getMacro(MACRO_CONTEXT.NEW_CONVERSATION)?.actions || []
+                        "
+                        :onRemove="
+                          (action) =>
+                            conversationStore.removeMacroAction(
+                              action,
+                              MACRO_CONTEXT.NEW_CONVERSATION
+                            )
+                        "
+                        class="mt-2 flex-shrink-0"
+                      />
+
+                      <ReplyBoxAttachmentPreview
+                        :attachments="mediaFiles"
+                        :uploadingFiles="uploadingFiles"
+                        :onDelete="handleFileDelete"
+                        v-if="mediaFiles.length > 0 || uploadingFiles.length > 0"
+                        class="mt-2 flex-shrink-0"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+            </div>
           </div>
-
-          <!-- Message Editor Section -->
-          <div class="flex-1 flex flex-col min-h-[180px] mt-4">
-            <FormField v-slot="{ componentField }" name="content">
-              <FormItem class="flex flex-col h-full">
-                <FormLabel>{{ $t('globals.terms.message') }}</FormLabel>
-                <FormControl class="flex-1 flex flex-col min-h-0">
-                  <div class="flex flex-col h-full">
-                    <Editor
-                      v-model:htmlContent="componentField.modelValue"
-                      @update:htmlContent="(value) => componentField.onChange(value)"
-                      :placeholder="t('editor.hint.newLineCtrlK')"
-                      :insertContent="insertContent"
-                      :autoFocus="false"
-                      :enableInlineImages="true"
-                      class="w-full flex-1 overflow-y-auto p-2 box min-h-0"
-                      @send="createConversation"
-                      @filesDropped="uploadFiles"
-                    />
-
-                    <MacroActionsPreview
-                      v-if="
-                        conversationStore.getMacro(MACRO_CONTEXT.NEW_CONVERSATION).actions?.length >
-                        0
-                      "
-                      :actions="
-                        conversationStore.getMacro(MACRO_CONTEXT.NEW_CONVERSATION)?.actions || []
-                      "
-                      :onRemove="
-                        (action) =>
-                          conversationStore.removeMacroAction(
-                            action,
-                            MACRO_CONTEXT.NEW_CONVERSATION
-                          )
-                      "
-                      class="mt-2 flex-shrink-0"
-                    />
-
-                    <ReplyBoxAttachmentPreview
-                      :attachments="mediaFiles"
-                      :uploadingFiles="uploadingFiles"
-                      :onDelete="handleFileDelete"
-                      v-if="mediaFiles.length > 0 || uploadingFiles.length > 0"
-                      class="mt-2 flex-shrink-0"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-          </div>
-
-          </div><!-- /scrollable area -->
+          <!-- /scrollable area -->
 
           <DialogFooter class="mt-4 pt-2 flex items-center !justify-between w-full flex-shrink-0">
-            <ReplyBoxMenuBar
-              :handleFileUpload="handleFileUpload"
-              @emojiSelect="handleEmojiSelect"
-              :showSendButton="false"
-            />
+            <ReplyBoxMenuBar :handleFileUpload="handleFileUpload" :showSendButton="false" />
             <Button type="submit" :disabled="isDisabled" :isLoading="loading">
               {{ $t('globals.messages.submit') }}
             </Button>
@@ -355,13 +282,6 @@ const isDisabled = computed(() => {
 const formSchema = z.object({
   subject: z.string().min(1, t('validation.subjectCannotBeEmpty')),
   content: z.string().min(1, t('validation.messageCannotBeEmpty')),
-  inbox_id: z
-    .any()
-    .refine((val) => inboxStore.emailOptions.some((option) => option.value === val), {
-      message: t('globals.messages.required')
-    }),
-  team_id: z.any().optional(),
-  agent_id: z.any().optional(),
   contact_email: z.string().email(t('validation.invalidEmail')),
   first_name: z.string().min(1, t('globals.messages.required')),
   last_name: z.string().optional()

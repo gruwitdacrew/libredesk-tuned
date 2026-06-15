@@ -1,10 +1,7 @@
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <SidebarMenuButton
-        size="md"
-        class="p-0"
-      >
+      <SidebarMenuButton size="md" class="p-0">
         <div class="relative">
           <Avatar class="h-8 w-8 rounded">
             <AvatarImage :src="userStore.avatar" alt="U" class="rounded" />
@@ -57,7 +54,7 @@
             />
           </div>
 
-          <div class="border-t border-border pt-3 space-y-3">
+          <div v-if="false" class="border-t border-border pt-3 space-y-3">
             <!-- Away toggle -->
             <div class="flex items-center justify-between text-sm">
               <span class="text-muted-foreground">{{ t('navigation.away') }}</span>

@@ -63,7 +63,7 @@ export const createColumns = (t) => [
       return h(
         'div',
         { class: 'text-center text-sm' },
-        format(row.getValue('created_at'), 'PPpp')
+        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
       )
     }
   },

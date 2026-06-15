@@ -11,7 +11,12 @@ export const CONVERSATION_DEFAULT_STATUSES = {
   OPEN: 'Открыт',
   SNOOZED: 'Отложен',
   RESOLVED: 'Решен',
-  CLOSED: 'Закрыт'
+  CLOSED: 'Закрыт',
+  NEW: 'Новый',
+  ARCHIVE: 'Архив',
+  ESCALATION: 'Эскалация',
+  HANDLED: 'Обработан',
+  IN_PROGRESS: 'В работе'
 }
 
 export const CONVERSATION_DEFAULT_STATUSES_LIST = Object.values(CONVERSATION_DEFAULT_STATUSES)

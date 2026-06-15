@@ -5,10 +5,7 @@
         <Button
           variant="outline"
           :class="
-            cn(
-              'w-full justify-start text-left font-normal',
-              !rangeLabel && 'text-muted-foreground'
-            )
+            cn('w-full justify-start text-left font-normal', !rangeLabel && 'text-muted-foreground')
           "
         >
           <CalendarIcon class="mr-2 h-4 w-4" />
@@ -28,10 +25,7 @@
         <Button
           variant="outline"
           :class="
-            cn(
-              'w-full justify-start text-left font-normal',
-              !modelValue && 'text-muted-foreground'
-            )
+            cn('w-full justify-start text-left font-normal', !modelValue && 'text-muted-foreground')
           "
         >
           <CalendarIcon class="mr-2 h-4 w-4" />
@@ -39,10 +33,7 @@
         </Button>
       </PopoverTrigger>
       <PopoverContent class="w-auto p-0">
-        <Calendar
-          :model-value="toCalendarDate(modelValue)"
-          @update:model-value="handlePick"
-        />
+        <Calendar :model-value="toCalendarDate(modelValue)" @update:model-value="handlePick" />
       </PopoverContent>
     </Popover>
   </div>
@@ -81,7 +72,7 @@ const toCalendarDate = (v) => {
 
 const formatDisplay = (v) => {
   try {
-    return format(new Date(v), 'MMM dd, yyyy')
+    return format(new Date(v), 'MMM dd, yyyy', { locale: 'ru' })
   } catch {
     return v
   }
