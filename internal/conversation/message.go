@@ -579,13 +579,10 @@ func (m *Manager) InsertMessage(message *models.Message) error {
 	// Add this user as a participant if not already present.
 	m.addConversationParticipant(message.SenderID, message.ConversationUUID)
 
-	// Skip updating last_message and broadcasting for continuity emails.
-	if !message.IsContinuityMessage() {
-		// Hide CSAT message content as it contains a public link to the survey.
+	// Skip updating last_message and broadcasting for continuity emails and csat.
+	if !(message.IsContinuityMessage() || message.HasCSAT()) {
+
 		lastMessage := message.TextContent
-		if message.HasCSAT() {
-			lastMessage = "Please rate your experience with us"
-		}
 
 		// HTML2Text drops <img> tags, so image-only messages have empty text. Fall back to a media-type preview.
 		if strings.TrimSpace(lastMessage) == "" {
@@ -707,25 +704,25 @@ func (m *Manager) getMessageActivityContent(activityType, newValue, actorName st
 	var content = ""
 	switch activityType {
 	case models.ActivityAssignedUserChange:
-		content = fmt.Sprintf("Assigned to %s by %s", newValue, actorName)
+		content = fmt.Sprintf("Назначен в %s, %s", newValue, actorName)
 	case models.ActivityAssignedTeamChange:
-		content = fmt.Sprintf("Assigned to %s team by %s", newValue, actorName)
+		content = fmt.Sprintf("Назначен в %s команду, %s", newValue, actorName)
 	case models.ActivitySelfAssign:
-		content = fmt.Sprintf("%s self-assigned this conversation", actorName)
+		content = fmt.Sprintf("%s назначил(а) себя на этот диалог", actorName)
 	case models.ActivityPriorityChange:
-		content = fmt.Sprintf("%s set priority to %s", actorName, newValue)
+		content = fmt.Sprintf("%s изменил(а) приоритет на %s", actorName, newValue)
 	case models.ActivityStatusChange:
-		content = fmt.Sprintf("%s marked the conversation as %s", actorName, newValue)
+		content = fmt.Sprintf("%s изменил(а) статус диалога на %s", actorName, newValue)
 	case models.ActivityTagAdded:
-		content = fmt.Sprintf("%s added tag %s", actorName, newValue)
+		content = fmt.Sprintf("%s добавил(а) тег %s", actorName, newValue)
 	case models.ActivityTagRemoved:
-		content = fmt.Sprintf("%s removed tag %s", actorName, newValue)
+		content = fmt.Sprintf("%s удалил(а) тег %s", actorName, newValue)
 	case models.ActivitySLASet:
-		content = fmt.Sprintf("%s set %s SLA policy", actorName, newValue)
+		content = fmt.Sprintf("%s поменял(а) %s SLA policy", actorName, newValue)
 	case models.ActivityParticipantAdded:
-		content = fmt.Sprintf("%s joined the conversation", newValue)
+		content = fmt.Sprintf("%s присоединился к диалогу", newValue)
 	default:
-		return "", fmt.Errorf("invalid activity type %s", activityType)
+		return "", fmt.Errorf("Некорректный тип активности %s", activityType)
 	}
 	return content, nil
 }

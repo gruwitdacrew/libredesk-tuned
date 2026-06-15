@@ -1,12 +1,6 @@
 <template>
   <div class="max-w-5xl mx-auto p-6 min-h-screen">
     <Tabs :default-value="defaultTab" v-model="activeTab">
-      <TabsList class="grid w-full mb-6" :class="tabsGridClass">
-        <TabsTrigger v-for="(items, type) in results" :key="type" :value="type">
-          {{ $t(tabLabelKeys[type], 2) }} ({{ items.length }})
-        </TabsTrigger>
-      </TabsList>
-
       <TabsContent v-for="(items, type) in results" :key="type" :value="type" class="mt-0">
         <div class="bg-background rounded border overflow-hidden">
           <!-- No results message -->
@@ -48,11 +42,7 @@
                         }}
                       </span>
                       <Badge variant="outline" class="text-xs font-medium">
-                        {{
-                          type === 'conversations'
-                            ? item.status
-                            : item.conversation_status
-                        }}
+                        {{ type === 'conversations' ? item.status : item.conversation_status }}
                       </Badge>
                     </div>
 

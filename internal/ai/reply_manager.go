@@ -107,8 +107,8 @@ func (rm *ReplyManager) worker() {
 
 		// Обрабатываем запрос
 		resp, err := rm.processRequest(req)
-		if err != nil {
-			rm.lo.Error("failed to process request", "error", err, "request_id", req.ID)
+		if resp == nil {
+			resp = &models.AIResponse{}
 		}
 
 		// Отправляем ответ в канал запроса
@@ -132,18 +132,18 @@ func (rm *ReplyManager) processRequest(req models.AIRequest) (*models.AIResponse
 		"session_id": req.SessionID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling: %w", err)
+		return &models.AIResponse{}, nil
 	}
 
 	resp, err := rm.httpClient.Post(rm.aiEndpoint, "application/json", bytes.NewReader(payload))
 	if err != nil {
-		return nil, fmt.Errorf("error requesting: %w", err)
+		return &models.AIResponse{}, nil
 	}
 	defer resp.Body.Close()
 
 	var mlResp models.AIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&mlResp); err != nil {
-		return nil, fmt.Errorf("error parse response: %w", err)
+		return &models.AIResponse{}, nil
 	}
 
 	return &mlResp, nil

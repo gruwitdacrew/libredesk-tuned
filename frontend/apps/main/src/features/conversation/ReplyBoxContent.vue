@@ -17,6 +17,7 @@
           </TabsTrigger>
           <TabsTrigger
             value="private_note"
+            v-if="false"
             class="px-3 py-1 rounded transition-colors duration-200"
             :class="{ 'bg-background text-foreground': messageType === 'private_note' }"
           >
@@ -276,7 +277,8 @@ const enableSend = computed(() => {
       conversationStore.getMacro('reply')?.actions?.length > 0 ||
       props.uploadedFiles.length > 0) &&
     emailErrors.value.length === 0 &&
-    !props.uploadingFiles.length && !props.isDraftLoading
+    !props.uploadingFiles.length &&
+    !props.isDraftLoading
   )
 })
 
