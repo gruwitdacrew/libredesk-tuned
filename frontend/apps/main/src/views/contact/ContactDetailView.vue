@@ -44,7 +44,11 @@
             <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CalendarIcon size="14" class="flex-shrink-0" />
               {{ $t('globals.terms.createdOn') }}
-              {{ contact.created_at ? format(new Date(contact.created_at), 'PPP') : 'N/A' }}
+              {{
+                contact.created_at
+                  ? format(new Date(contact.created_at), 'PPP', { locale: 'ru' })
+                  : 'N/A'
+              }}
             </div>
 
             <div class="w-30 pt-3">

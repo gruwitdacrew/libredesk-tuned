@@ -32,7 +32,7 @@
       <p class="sidebar-label">{{ $t('globals.terms.initiatedAt') }}</p>
       <Skeleton v-if="conversationStore.conversation.loading" class="w-32 h-4 mt-0.5" />
       <p v-if="conversation.created_at" class="sidebar-value">
-        {{ format(conversation.created_at, 'PPpp') }}
+        {{ format(conversation.created_at, 'PPpp', { locale: 'ru' }) }}
       </p>
       <p v-else class="sidebar-value">-</p>
     </div>
@@ -50,7 +50,7 @@
       <Skeleton v-if="conversationStore.conversation.loading" class="w-32 h-4 mt-0.5" />
       <div v-else>
         <p v-if="conversation.first_reply_at" class="sidebar-value">
-          {{ format(conversation.first_reply_at, 'PPpp') }}
+          {{ format(conversation.first_reply_at, 'PPpp', { locale: 'ru' }) }}
         </p>
         <p v-else class="sidebar-value">-</p>
       </div>
@@ -69,7 +69,7 @@
       <Skeleton v-if="conversationStore.conversation.loading" class="w-32 h-4 mt-0.5" />
       <div v-else>
         <p v-if="conversation.resolved_at" class="sidebar-value">
-          {{ format(conversation.resolved_at, 'PPpp') }}
+          {{ format(conversation.resolved_at, 'PPpp', { locale: 'ru' }) }}
         </p>
         <p v-else class="sidebar-value">-</p>
       </div>
@@ -87,7 +87,7 @@
       </div>
       <Skeleton v-if="conversationStore.conversation.loading" class="w-32 h-4 mt-0.5" />
       <p v-if="conversation.last_reply_at" class="sidebar-value">
-        {{ format(conversation.last_reply_at, 'PPpp') }}
+        {{ format(conversation.last_reply_at, 'PPpp', { locale: 'ru' }) }}
       </p>
       <p v-else class="sidebar-value">-</p>
     </div>
@@ -96,7 +96,7 @@
       <p class="sidebar-label">{{ $t('globals.terms.closedAt') }}</p>
       <Skeleton v-if="conversationStore.conversation.loading" class="w-32 h-4 mt-0.5" />
       <p v-else class="sidebar-value">
-        {{ format(conversation.closed_at, 'PPpp') }}
+        {{ format(conversation.closed_at, 'PPpp', { locale: 'ru' }) }}
       </p>
     </div>
 

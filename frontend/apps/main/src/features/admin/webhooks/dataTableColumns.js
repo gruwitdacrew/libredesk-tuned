@@ -11,8 +11,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.name'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' },
-        h(RouterLink,
+      return h(
+        'div',
+        { class: 'text-center' },
+        h(
+          RouterLink,
           {
             to: { name: 'edit-webhook', params: { id: row.original.id } },
             class: 'text-primary hover:underline'
@@ -67,7 +70,7 @@ export const createColumns = (t) => [
             variant: isActive ? 'default' : 'secondary',
             class: 'text-xs'
           },
-          () => isActive ? t('globals.terms.active') : t('globals.terms.inactive')
+          () => (isActive ? t('globals.terms.active') : t('globals.terms.inactive'))
         )
       ])
     }
@@ -79,7 +82,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center text-sm' }, format(row.getValue('created_at'), 'PPpp'))
+      return h(
+        'div',
+        { class: 'text-center text-sm' },
+        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
+      )
     }
   },
   {

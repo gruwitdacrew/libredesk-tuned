@@ -9,7 +9,9 @@
         variant="outline"
         size="sm"
         @click="startAddingNote"
-        v-if="!isAddingNote && !isLoading && notes.length !== 0 && userStore.can('contact_notes:write')"
+        v-if="
+          !isAddingNote && !isLoading && notes.length !== 0 && userStore.can('contact_notes:write')
+        "
         class="transition-all hover:bg-primary/10 hover:border-primary/30"
       >
         <PlusIcon size="18" />
@@ -33,7 +35,9 @@
             />
           </div>
           <div class="flex justify-end space-x-3 pt-2">
-            <Button variant="outline" @click="cancelAddNote"> {{ $t('globals.messages.cancel') }} </Button>
+            <Button variant="outline" @click="cancelAddNote">
+              {{ $t('globals.messages.cancel') }}
+            </Button>
             <Button type="submit" :disabled="!newNote.trim()">
               {{ $t('contact.saveNote') }}
             </Button>
@@ -102,9 +106,7 @@
                   class="text-destructive cursor-pointer"
                 >
                   <TrashIcon class="mr-2" size="15" />
-                  {{
-                    $t('contact.deleteNote')
-                  }}
+                  {{ $t('contact.deleteNote') }}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -121,10 +123,13 @@
         </CardContent>
       </Card>
       <!-- Load more notes -->
-      <div v-if="compact && notes.length > NOTES_LIMIT && !showAll" class="flex justify-center pt-2">
-       <Button variant="ghost" size="sm" @click="showAll = true">
-         {{ $t('globals.terms.loadMore') }} ({{ notes.length - NOTES_LIMIT }})
-       </Button>
+      <div
+        v-if="compact && notes.length > NOTES_LIMIT && !showAll"
+        class="flex justify-center pt-2"
+      >
+        <Button variant="ghost" size="sm" @click="showAll = true">
+          {{ $t('globals.terms.loadMore') }} ({{ notes.length - NOTES_LIMIT }})
+        </Button>
       </div>
     </div>
 
@@ -201,7 +206,6 @@ const NOTES_LIMIT = 10
 const showAll = ref(false)
 const latestFetchId = ref(0)
 
-
 const fetchNotes = async (contactId = props.contactId) => {
   const fetchId = ++latestFetchId.value
   try {
@@ -222,7 +226,7 @@ const fetchNotes = async (contactId = props.contactId) => {
   }
 }
 
-const formatDate = (date) => format(new Date(date), 'PPP p')
+const formatDate = (date) => format(new Date(date), 'PPP p', { locale: 'ru' })
 const relativeDate = (date) => formatDistanceToNow(new Date(date), { addSuffix: true })
 
 const startAddingNote = () => {
@@ -265,16 +269,19 @@ const visibleNotes = computed(() => {
   return notes.value.slice(0, NOTES_LIMIT)
 })
 
-watch(() => props.contactId, (newId) => {
-  latestFetchId.value++
-  showAll.value = false
-  cancelAddNote()
-  notes.value = []
-  if (!newId) {
-    isLoading.value = false
-    return
-  }
-  fetchNotes(newId)
-}, { immediate: true })
-
+watch(
+  () => props.contactId,
+  (newId) => {
+    latestFetchId.value++
+    showAll.value = false
+    cancelAddNote()
+    notes.value = []
+    if (!newId) {
+      isLoading.value = false
+      return
+    }
+    fetchNotes(newId)
+  },
+  { immediate: true }
+)
 </script>

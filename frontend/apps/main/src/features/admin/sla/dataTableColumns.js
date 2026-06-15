@@ -4,56 +4,67 @@ import dropdown from './dataTableDropdown.vue'
 import { format } from 'date-fns'
 
 export const createColumns = (t) => [
-    {
-        accessorKey: 'name',
-        header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.name'))
-        },
-        cell: function ({ row }) {
-            return h('div', { class: 'text-center' },
-                h(RouterLink,
-                    {
-                        to: { name: 'edit-sla', params: { id: row.original.id } },
-                        class: 'text-primary hover:underline'
-                    },
-                    () => row.getValue('name')
-                )
-            )
-        }
+  {
+    accessorKey: 'name',
+    header: function () {
+      return h('div', { class: 'text-center' }, t('globals.terms.name'))
     },
-    {
-        accessorKey: 'created_at',
-        enableGlobalFilter: false,
-        header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
-        },
-        cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, format(row.getValue('created_at'), 'PPpp'))
-        }
-    },
-    {
-        accessorKey: 'updated_at',
-        enableGlobalFilter: false,
-        header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
-        },
-        cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
-        }
-    },
-    {
-        id: 'actions',
-        enableHiding: false,
-        enableSorting: false,
-        cell: ({ row }) => {
-            const role = row.original
-            return h(
-                'div',
-                { class: 'relative' },
-                h(dropdown, {
-                    role
-                })
-            )
-        }
+    cell: function ({ row }) {
+      return h(
+        'div',
+        { class: 'text-center' },
+        h(
+          RouterLink,
+          {
+            to: { name: 'edit-sla', params: { id: row.original.id } },
+            class: 'text-primary hover:underline'
+          },
+          () => row.getValue('name')
+        )
+      )
     }
+  },
+  {
+    accessorKey: 'created_at',
+    enableGlobalFilter: false,
+    header: function () {
+      return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
+    },
+    cell: function ({ row }) {
+      return h(
+        'div',
+        { class: 'text-center' },
+        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
+      )
+    }
+  },
+  {
+    accessorKey: 'updated_at',
+    enableGlobalFilter: false,
+    header: function () {
+      return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
+    },
+    cell: function ({ row }) {
+      return h(
+        'div',
+        { class: 'text-center' },
+        format(row.getValue('updated_at'), 'PPpp', { locale: 'ru' })
+      )
+    }
+  },
+  {
+    id: 'actions',
+    enableHiding: false,
+    enableSorting: false,
+    cell: ({ row }) => {
+      const role = row.original
+      return h(
+        'div',
+        { class: 'relative' },
+        h(dropdown, {
+          role
+        })
+      )
+    }
+  }
 ]

@@ -8,7 +8,7 @@
         </TooltipTrigger>
         <TooltipContent>
           <p>
-            {{ format(message.updated_at, "MMMM dd, yyyy 'at' HH:mm") }}
+            {{ format(message.updated_at, "MMMM dd, yyyy 'at' HH:mm", { locale: 'ru' }) }}
           </p>
         </TooltipContent>
       </Tooltip>

@@ -45,7 +45,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      return h(
+        'div',
+        { class: 'text-center' },
+        format(row.getValue('updated_at'), 'PPpp', { locale: 'ru' })
+      )
     }
   },
   {

@@ -109,7 +109,7 @@ const props = defineProps({
 // Get the first available tab as default
 const defaultTab = computed(() => {
   const types = Object.keys(props.results)
-  return types.length > 0 ? types[0] : ''
+  return types.length > 0 ? types[1] : ''
 })
 
 const activeTab = ref('')
@@ -120,7 +120,7 @@ watch(
   (newResults) => {
     const types = Object.keys(newResults)
     if (types.length > 0 && !activeTab.value) {
-      activeTab.value = types[0]
+      activeTab.value = types[1]
     }
   },
   { immediate: true }
@@ -137,7 +137,7 @@ const tabsGridClass = computed(() => {
 
 const formatDate = (dateString) => {
   const date = parseISO(dateString)
-  return format(date, 'MMM d, yyyy HH:mm')
+  return format(date, 'MMM d, yyyy HH:mm', { locale: 'ru' })
 }
 
 const truncateText = (text, length) => {
