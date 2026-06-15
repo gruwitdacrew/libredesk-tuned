@@ -1,6 +1,13 @@
-import { format, differenceInMinutes, differenceInHours, differenceInDays, differenceInMonths, differenceInYears } from 'date-fns'
+import {
+  format,
+  differenceInMinutes,
+  differenceInHours,
+  differenceInDays,
+  differenceInMonths,
+  differenceInYears
+} from 'date-fns'
 
-export function getRelativeTime (timestamp, now = new Date()) {
+export function getRelativeTime(timestamp, now = new Date()) {
   try {
     const mins = differenceInMinutes(now, timestamp)
     const hours = differenceInHours(now, timestamp)
@@ -31,9 +38,9 @@ export const formatDuration = (seconds, showSeconds = true) => {
 }
 
 export const formatMessageTimestamp = (time) => {
-  return format(time, 'd MMM, hh:mm a')
+  return format(time, 'd MMM, hh:mm a', { locale: 'ru' })
 }
 
 export const formatFullTimestamp = (time) => {
-  return format(time, 'd MMM yyyy, hh:mm a')
+  return format(time, 'd MMM yyyy, hh:mm a', { locale: 'ru' })
 }

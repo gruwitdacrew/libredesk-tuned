@@ -140,7 +140,7 @@
                   <CalendarIcon class="mr-2 h-4 w-4" />
                   {{
                     holidayDate && !isNaN(new Date(holidayDate).getTime())
-                      ? format(new Date(holidayDate), 'MMMM dd, yyyy', { locale: 'ru' })
+                      ? format(new Date(holidayDate), 'MMMM dd, yyyy', { locale: ru })
                       : t('globals.terms.pickDate')
                   }}
                 </Button>
@@ -183,6 +183,7 @@ import { Input } from '@shared-ui/components/ui/input/index.js'
 import { Popover, PopoverContent, PopoverTrigger } from '@shared-ui/components/ui/popover/index.js'
 import { cn } from '@shared-ui/lib/utils.js'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { WEEKDAYS } from '../../../constants/date.js'
 import { Calendar as CalendarIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
