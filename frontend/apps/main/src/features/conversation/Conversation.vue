@@ -18,7 +18,7 @@
       </div>
       <div>
         <DropdownMenu>
-          <DropdownMenuTrigger>
+          <DropdownMenuTrigger :disabled="isStatusDisabled()">
             <div
               class="flex items-center space-x-1 cursor-pointer bg-primary px-2 py-1 rounded text-sm"
               v-if="!conversationStore.conversation.loading"
@@ -31,7 +31,7 @@
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
-              v-for="status in conversationStore.statusOptions"
+              v-for="status in filterConversationOptions(conversationStore.statusOptions)"
               :key="status.value"
               @click="handleUpdateStatus(status.label)"
             >
@@ -73,6 +73,33 @@ const route = useRoute()
 const isMobile = useMediaQuery('(max-width: 768px)')
 const conversationStore = useConversationStore()
 const emitter = useEmitter()
+
+function isStatusDisabled() {
+  switch (conversationStore.current?.status) {
+    case CONVERSATION_DEFAULT_STATUSES.NEW:
+      return true
+
+    case CONVERSATION_DEFAULT_STATUSES.ARCHIVE:
+      return true
+
+    case CONVERSATION_DEFAULT_STATUSES.ESCALATION:
+      return true
+
+    case CONVERSATION_DEFAULT_STATUSES.HANDLED:
+      return true
+
+    default:
+      return false
+  }
+}
+
+function filterConversationOptions() {
+  return conversationStore.statusOptions.filter(
+    (item) =>
+      item.label === CONVERSATION_DEFAULT_STATUSES.IN_PROGRESS ||
+      item.label === CONVERSATION_DEFAULT_STATUSES.OPEN
+  )
+}
 
 const goBack = () => {
   if (route.params.teamID) {

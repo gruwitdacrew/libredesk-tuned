@@ -8,13 +8,18 @@ export const CONVERSATION_LIST_TYPE = {
 }
 
 export const CONVERSATION_DEFAULT_STATUSES = {
-  OPEN: 'Open',
-  SNOOZED: 'Snoozed',
-  RESOLVED: 'Resolved',
-  CLOSED: 'Closed',
+  OPEN: 'Открыт',
+  SNOOZED: 'Отложен',
+  RESOLVED: 'Решен',
+  CLOSED: 'Закрыт',
+  NEW: 'Новый',
+  ARCHIVE: 'Архив',
+  ESCALATION: 'Эскалация',
+  HANDLED: 'Обработан',
+  IN_PROGRESS: 'В работе'
 }
 
-export const CONVERSATION_DEFAULT_STATUSES_LIST = Object.values(CONVERSATION_DEFAULT_STATUSES);
+export const CONVERSATION_DEFAULT_STATUSES_LIST = Object.values(CONVERSATION_DEFAULT_STATUSES)
 
 export const MACRO_CONTEXT = {
   REPLY: 'reply',

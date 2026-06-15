@@ -28,7 +28,9 @@
                 <p class="text-sm font-medium text-gray-700 dark:text-foreground">
                   {{
                     props.initialValues.last_active_at
-                      ? format(new Date(props.initialValues.last_active_at), 'PPpp')
+                      ? format(new Date(props.initialValues.last_active_at), 'PPpp', {
+                          locale: 'ru'
+                        })
                       : 'N/A'
                   }}
                 </p>
@@ -41,7 +43,9 @@
                 <p class="text-sm font-medium text-gray-700 dark:text-foreground">
                   {{
                     props.initialValues.last_login_at
-                      ? format(new Date(props.initialValues.last_login_at), 'PPpp')
+                      ? format(new Date(props.initialValues.last_login_at), 'PPpp', {
+                          locale: 'ru'
+                        })
                       : 'N/A'
                   }}
                 </p>
@@ -211,7 +215,7 @@
         <!-- Last Used Info -->
         <div v-if="apiKeyLastUsedAt" class="text-xs text-gray-500">
           {{ $t('globals.messages.lastUsed') }}:
-          {{ format(new Date(apiKeyLastUsedAt), 'PPpp') }}
+          {{ format(new Date(apiKeyLastUsedAt), 'PPpp', { locale: 'ru' }) }}
         </div>
       </div>
 

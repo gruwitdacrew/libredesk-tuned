@@ -12,7 +12,7 @@
         @select="onSelectEmoji"
         :style="pickerStyle"
         class="fixed z-[200]"
-        v-if="isEmojiPickerVisible && !isMobile"
+        v-if="false"
       />
     </Teleport>
 
@@ -29,18 +29,6 @@
       >
         <Paperclip class="h-4 w-4" />
       </Toggle>
-
-      <!-- Wrapper div gives us a stable DOM ref for computing picker position -->
-      <div ref="emojiToggleWrapperRef" class="hidden md:inline-flex">
-        <Toggle
-          class="px-2 py-2 border-0"
-          variant="outline"
-          @click="toggleEmojiPicker"
-          :pressed="isEmojiPickerVisible"
-        >
-          <Smile class="h-4 w-4" />
-        </Toggle>
-      </div>
     </div>
 
     <Button
@@ -60,7 +48,7 @@ import { ref, computed, watch, defineAsyncComponent } from 'vue'
 import { onClickOutside, useMediaQuery } from '@vueuse/core'
 import { Button } from '@shared-ui/components/ui/button'
 import { Toggle } from '@shared-ui/components/ui/toggle'
-import { Paperclip, Smile } from 'lucide-vue-next'
+import { Paperclip } from 'lucide-vue-next'
 
 const EmojiPicker = defineAsyncComponent(async () => {
   const [mod] = await Promise.all([import('vue3-emoji-picker'), import('vue3-emoji-picker/css')])
