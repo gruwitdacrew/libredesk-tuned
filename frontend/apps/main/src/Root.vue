@@ -16,7 +16,7 @@ import { Toaster } from '@shared-ui/components/ui/sonner'
 import { TooltipProvider } from '@shared-ui/components/ui/tooltip'
 import { ru } from 'date-fns/locale'
 
-window.__localeId__ = ru
+window.__localeId__ = 'ru'
 
 const mode = useColorMode()
 </script>
