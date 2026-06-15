@@ -69,11 +69,7 @@
       <Skeleton v-if="conversationStore.conversation.loading" class="w-32 h-4 mt-0.5" />
       <div v-else>
         <p v-if="conversation.resolved_at" class="sidebar-value">
-          <<<<<<< HEAD
           {{ format(conversation.resolved_at, 'PPpp', { locale: ru }) }}
-          =======
-          {{ format(conversation.resolved_at, 'PPpp', { locale: 'ru' }) }}
-          >>>>>>> 526b5b50 (fixed tabs search and date)
         </p>
         <p v-else class="sidebar-value">-</p>
       </div>
