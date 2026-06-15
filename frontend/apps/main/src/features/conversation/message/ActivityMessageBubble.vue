@@ -8,7 +8,7 @@
         </TooltipTrigger>
         <TooltipContent>
           <p>
-            {{ format(message.updated_at, "MMMM dd, yyyy 'at' HH:mm") }}
+            {{ format(message.updated_at, "MMMM dd, yyyy 'at' HH:mm", { locale: ru }) }}
           </p>
         </TooltipContent>
       </Tooltip>
@@ -18,6 +18,7 @@
 
 <script setup>
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@shared-ui/components/ui/tooltip'
 
 defineProps({

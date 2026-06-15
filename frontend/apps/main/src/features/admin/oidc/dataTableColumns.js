@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { RouterLink } from 'vue-router'
 import dropdown from './dataTableDropdown.vue'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 
 export const createColumns = (t) => [
   {
@@ -10,8 +11,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.name'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' },
-        h(RouterLink,
+      return h(
+        'div',
+        { class: 'text-center' },
+        h(
+          RouterLink,
           {
             to: { name: 'edit-sso', params: { id: row.original.id } },
             class: 'text-primary hover:underline'
@@ -36,7 +40,11 @@ export const createColumns = (t) => [
     header: () => h('div', { class: 'text-center' }, t('globals.terms.enabled')),
     cell: ({ row }) => {
       const enabled = row.getValue('enabled')
-      return h('div', { class: 'text-center' }, enabled ? t('globals.messages.yes') : t('globals.messages.no'))
+      return h(
+        'div',
+        { class: 'text-center' },
+        enabled ? t('globals.messages.yes') : t('globals.messages.no')
+      )
     }
   },
   {
@@ -46,7 +54,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('created_at'), 'PPpp'))
+      return h(
+        'div',
+        { class: 'text-center' },
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
+      )
     }
   },
   {
@@ -56,7 +68,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      return h(
+        'div',
+        { class: 'text-center' },
+        format(row.getValue('updated_at'), 'PPpp', { locale: ru })
+      )
     }
   },
   {
