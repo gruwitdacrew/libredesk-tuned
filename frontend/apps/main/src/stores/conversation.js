@@ -39,7 +39,7 @@ export const useConversationStore = defineStore('conversation', () => {
   })
   // Status options excluding 'Snoozed'
   const statusOptionsNoSnooze = computed(() =>
-    statuses.value.filter(s => s.name !== 'Snoozed').map(s => ({
+    statuses.value.filter(s => s.name !== CONVERSATION_DEFAULT_STATUSES.SNOOZED).map(s => ({
       label: s.name,
       value: s.id
     }))
@@ -146,7 +146,7 @@ export const useConversationStore = defineStore('conversation', () => {
   const conversations = reactive({
     data: [],
     listType: null,
-    status: 'Open',
+    status: CONVERSATION_DEFAULT_STATUSES.OPEN,
     sortField: 'newest',
     listFilters: [],
     viewID: 0,
