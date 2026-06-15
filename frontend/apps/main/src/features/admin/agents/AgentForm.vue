@@ -29,7 +29,7 @@
                   {{
                     props.initialValues.last_active_at
                       ? format(new Date(props.initialValues.last_active_at), 'PPpp', {
-                          locale: 'ru'
+                          locale: ru
                         })
                       : 'N/A'
                   }}
@@ -44,7 +44,7 @@
                   {{
                     props.initialValues.last_login_at
                       ? format(new Date(props.initialValues.last_login_at), 'PPpp', {
-                          locale: 'ru'
+                          locale: ru
                         })
                       : 'N/A'
                   }}
@@ -215,7 +215,7 @@
         <!-- Last Used Info -->
         <div v-if="apiKeyLastUsedAt" class="text-xs text-gray-500">
           {{ $t('globals.messages.lastUsed') }}:
-          {{ format(new Date(apiKeyLastUsedAt), 'PPpp', { locale: 'ru' }) }}
+          {{ format(new Date(apiKeyLastUsedAt), 'PPpp', { locale: ru }) }}
         </div>
       </div>
 
@@ -337,6 +337,7 @@ import { useI18n } from 'vue-i18n'
 import { useEmitter } from '../../../composables/useEmitter.js'
 import { EMITTER_EVENTS } from '../../../constants/emitterEvents.js'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import api from '../../../api/index.js'
 
 const props = defineProps({

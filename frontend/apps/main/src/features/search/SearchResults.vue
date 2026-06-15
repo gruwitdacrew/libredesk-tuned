@@ -91,6 +91,7 @@
 import { computed, ref, watch } from 'vue'
 import { ChevronRightIcon, ClockIcon } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared-ui/components/ui/tabs'
 import { Badge } from '@shared-ui/components/ui/badge'
 
@@ -137,7 +138,7 @@ const tabsGridClass = computed(() => {
 
 const formatDate = (dateString) => {
   const date = parseISO(dateString)
-  return format(date, 'MMM d, yyyy HH:mm', { locale: 'ru' })
+  return format(date, 'd MMM yyyy, HH:mm', { locale: ru })
 }
 
 const truncateText = (text, length) => {

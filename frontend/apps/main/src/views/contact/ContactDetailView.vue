@@ -46,7 +46,7 @@
               {{ $t('globals.terms.createdOn') }}
               {{
                 contact.created_at
-                  ? format(new Date(contact.created_at), 'PPP', { locale: 'ru' })
+                  ? format(new Date(contact.created_at), 'PPP', { locale: ru })
                   : 'N/A'
               }}
             </div>
@@ -104,6 +104,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { useI18n } from 'vue-i18n'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'

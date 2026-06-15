@@ -165,6 +165,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { format, formatDistanceToNow } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { Button } from '@shared-ui/components/ui/button'
 import { Card, CardHeader, CardContent } from '@shared-ui/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@shared-ui/components/ui/avatar'
@@ -226,7 +227,7 @@ const fetchNotes = async (contactId = props.contactId) => {
   }
 }
 
-const formatDate = (date) => format(new Date(date), 'PPP p', { locale: 'ru' })
+const formatDate = (date) => format(new Date(date), 'PPP p', { locale: ru })
 const relativeDate = (date) => formatDistanceToNow(new Date(date), { addSuffix: true })
 
 const startAddingNote = () => {

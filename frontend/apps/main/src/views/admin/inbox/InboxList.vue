@@ -80,6 +80,7 @@ import { useEmitter } from '@main/composables/useEmitter'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import LoadingOverlay from '@main/components/layout/LoadingOverlay.vue'
 import { useInboxStore } from '@main/stores/inbox'
 import { getChannelStyle } from '@main/utils/channel'
@@ -213,7 +214,7 @@ const columns = [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('updated_at'), 'PPpp', { locale: 'ru' })
+        format(row.getValue('updated_at'), 'PPpp', { locale: ru })
       )
     }
   },

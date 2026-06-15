@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { RouterLink } from 'vue-router'
 import dropdown from './dataTableDropdown.vue'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 
 export const createOutgoingEmailTableColumns = (t) => [
   {
@@ -50,7 +51,7 @@ export const createOutgoingEmailTableColumns = (t) => [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
       )
     }
   },
@@ -103,7 +104,7 @@ export const createEmailNotificationTableColumns = (t) => [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
       )
     }
   },

@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { RouterLink } from 'vue-router'
 import dropdown from './dataTableDropdown.vue'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { Badge } from '@shared-ui/components/ui/badge'
 
 export const createColumns = (t) => [
@@ -85,7 +86,7 @@ export const createColumns = (t) => [
       return h(
         'div',
         { class: 'text-center text-sm' },
-        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
       )
     }
   },

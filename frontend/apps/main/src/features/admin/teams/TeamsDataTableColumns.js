@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { RouterLink } from 'vue-router'
 import TeamDataTableDropdown from '@/features/admin/teams/TeamDataTableDropdown.vue'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { getI18n } from '@/i18n'
 
 const t = () => getI18n().global.t
@@ -37,7 +38,7 @@ export const columns = [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('created_at'), 'PPpp', { locale: 'ru' })
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
       )
     }
   },
@@ -50,7 +51,7 @@ export const columns = [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('updated_at'), 'PPpp', { locale: 'ru' })
+        format(row.getValue('updated_at'), 'PPpp', { locale: ru })
       )
     }
   },
