@@ -500,6 +500,55 @@ const viewToDelete = ref(null)
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  :isActive="isActiveParent('/inboxes/active-channel')"
+                  @click="navigateToInbox('all')"
+                >
+                  <List />
+                  <span> Активный (канал связи) </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  :isActive="isActiveParent('/inboxes/active-widget')"
+                  @click="navigateToInbox('all')"
+                >
+                  <List />
+                  <span> Активный (виджет) </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  :isActive="isActiveParent('/inboxes/escalated')"
+                  @click="navigateToInbox('all')"
+                >
+                  <List />
+                  <span> Эскалированный </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  :isActive="isActiveParent('/inboxes/completed')"
+                  @click="navigateToInbox('all')"
+                >
+                  <List />
+                  <span> Завершенный </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  :isActive="isActiveParent('/inboxes/all')"
+                  @click="navigateToInbox('all')"
+                >
+                  <List />
+                  <span> Обработанный </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <!-- Team Inboxes -->
               <Collapsible
                 defaultOpen
@@ -536,10 +585,10 @@ const viewToDelete = ref(null)
 
               <!-- Views -->
               <Collapsible
+                v-if="false"
                 class="group/collapsible"
                 defaultOpen
                 v-model:open="viewInboxOpen"
-                v-if="userStore.can(permissions.VIEW_MANAGE)"
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>

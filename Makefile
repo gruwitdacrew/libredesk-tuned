@@ -11,6 +11,8 @@ FRONTEND_DIST := ${FRONTEND_DIR}/dist
 STATIC := ${FRONTEND_DIST} i18n schema.sql static
 GOPATH ?= $(HOME)/go
 STUFFBIN ?= $(GOPATH)/bin/stuffbin
+COMPOSE := docker compose
+PROXY_SERVICE := socat
 
 # The default target to run when `make` is executed.
 .DEFAULT_GOAL := build 
@@ -107,3 +109,20 @@ test:
 	go test -count=1 ./...
 	@echo "→ Running frontend tests..."
 	cd ${FRONTEND_DIR} && npx pnpm install --frozen-lockfile && npx pnpm test:run
+
+.PHONY: proxy-up 
+proxy-up:
+	$(COMPOSE) up -d $(PROXY_SERVICE)
+
+
+.PHONY: proxy-down
+proxy-down:
+	$(COMPOSE) stop $(PROXY_SERVICE) && $(COMPOSE) rm -f $(PROXY_SERVICE)
+
+.PHONY: proxy-restart
+proxy-restart:
+	$(COMPOSE) restart $(PROXY_SERVICE)
+
+.PHONY: proxy-logs
+proxy-logs:
+	$(COMPOSE) logs -f $(PROXY_SERVICE)
