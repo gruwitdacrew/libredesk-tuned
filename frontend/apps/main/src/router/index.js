@@ -119,7 +119,7 @@ const routes = [
       {
         path: '/inboxes/:type(assigned|unassigned|all|mentioned)?',
         name: 'inboxes',
-        redirect: '/inboxes/assigned',
+        redirect: '/inboxes/all',
         component: InboxLayout,
         props: true,
         meta: { titleKey: 'globals.terms.inbox', hidePageHeader: true },
@@ -589,9 +589,7 @@ router.beforeEach((to, from, next) => {
   const i18n = getI18n()
   const typeKey = typeof to.meta?.typeKey === 'function' ? to.meta.typeKey(to) : ''
   const titleKey = typeKey || to.meta?.titleKey
-  const pageTitle = titleKey && i18n
-    ? i18n.global.t(titleKey, to.meta?.titleCount || 1)
-    : ''
+  const pageTitle = titleKey && i18n ? i18n.global.t(titleKey, to.meta?.titleCount || 1) : ''
   document.title = `${pageTitle} - ${siteName}`
   next()
 })
