@@ -10,8 +10,8 @@ import statistics
 
 @dataclass
 class TestConfig:
-    base_url: str = "http://localhost:9000"
-    inbox_id: str = "0f96a6a7-8e24-4103-bf45-bc59294dd572"
+    base_url: str = "http://192.168.19.213:9000"
+    inbox_id: str = "ae23c2d0-cc78-49bd-9e03-c70482f94473"
     
     duration_seconds: int = 10
     interval: int = 20
