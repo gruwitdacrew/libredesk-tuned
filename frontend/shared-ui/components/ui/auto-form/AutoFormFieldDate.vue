@@ -3,13 +3,7 @@ import { DateFormatter, getLocalTimeZone } from '@internationalized/date'
 import { CalendarIcon } from '@radix-icons/vue'
 import { beautifyObjectName } from './utils'
 import AutoFormLabel from './AutoFormLabel.vue'
-import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormMessage
-} from '../form'
+import { FormControl, FormDescription, FormField, FormItem, FormMessage } from '../form'
 
 import { Calendar } from '../calendar'
 import { Button } from '../button'
@@ -52,7 +46,11 @@ const df = new DateFormatter('en-US', {
                   <CalendarIcon class="mr-2 h-4 w-4" />
                   {{
                     slotProps.componentField.modelValue
-                      ? df.format(slotProps.componentField.modelValue.toDate(getLocalTimeZone()))
+                      ? df.format(
+                          slotProps.componentField.modelValue.toDate(getLocalTimeZone(), {
+                            locale: 'ru'
+                          })
+                        )
                       : 'Pick a date'
                   }}
                 </Button>

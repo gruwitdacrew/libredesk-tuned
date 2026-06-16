@@ -2,6 +2,7 @@ import { h } from 'vue'
 import { RouterLink } from 'vue-router'
 import UserDataTableDropDown from '@/features/admin/agents/dataTableDropdown.vue'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 
 export const createColumns = (t) => [
   {
@@ -10,8 +11,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.firstName'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' },
-        h(RouterLink,
+      return h(
+        'div',
+        { class: 'text-center' },
+        h(
+          RouterLink,
           {
             to: { name: 'edit-agent', params: { id: row.original.id } },
             class: 'text-primary hover:underline'
@@ -37,7 +41,11 @@ export const createColumns = (t) => [
       return h('div', { class: 'text-center' }, t('globals.terms.enabled'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, row.getValue('enabled') ? t('globals.messages.yes') : t('globals.messages.no'))
+      return h(
+        'div',
+        { class: 'text-center' },
+        row.getValue('enabled') ? t('globals.messages.yes') : t('globals.messages.no')
+      )
     }
   },
   {
@@ -59,7 +67,7 @@ export const createColumns = (t) => [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('created_at'), 'PPpp')
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
       )
     }
   },
@@ -73,7 +81,7 @@ export const createColumns = (t) => [
       return h(
         'div',
         { class: 'text-center' },
-        format(row.getValue('updated_at'), 'PPpp')
+        format(row.getValue('updated_at'), 'PPpp', { locale: ru })
       )
     }
   },

@@ -1,12 +1,6 @@
 <template>
   <div class="max-w-5xl mx-auto p-6 min-h-screen">
     <Tabs :default-value="defaultTab" v-model="activeTab">
-      <TabsList class="grid w-full mb-6" :class="tabsGridClass">
-        <TabsTrigger v-for="(items, type) in results" :key="type" :value="type">
-          {{ $t(tabLabelKeys[type], 2) }} ({{ items.length }})
-        </TabsTrigger>
-      </TabsList>
-
       <TabsContent v-for="(items, type) in results" :key="type" :value="type" class="mt-0">
         <div class="bg-background rounded border overflow-hidden">
           <!-- No results message -->
@@ -48,11 +42,7 @@
                         }}
                       </span>
                       <Badge variant="outline" class="text-xs font-medium">
-                        {{
-                          type === 'conversations'
-                            ? item.status
-                            : item.conversation_status
-                        }}
+                        {{ type === 'conversations' ? item.status : item.conversation_status }}
                       </Badge>
                     </div>
 
@@ -101,6 +91,7 @@
 import { computed, ref, watch } from 'vue'
 import { ChevronRightIcon, ClockIcon } from 'lucide-vue-next'
 import { format, parseISO } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared-ui/components/ui/tabs'
 import { Badge } from '@shared-ui/components/ui/badge'
 
@@ -119,7 +110,7 @@ const props = defineProps({
 // Get the first available tab as default
 const defaultTab = computed(() => {
   const types = Object.keys(props.results)
-  return types.length > 0 ? types[0] : ''
+  return types.length > 0 ? types[1] : ''
 })
 
 const activeTab = ref('')
@@ -130,7 +121,7 @@ watch(
   (newResults) => {
     const types = Object.keys(newResults)
     if (types.length > 0 && !activeTab.value) {
-      activeTab.value = types[0]
+      activeTab.value = types[1]
     }
   },
   { immediate: true }
@@ -147,7 +138,7 @@ const tabsGridClass = computed(() => {
 
 const formatDate = (dateString) => {
   const date = parseISO(dateString)
-  return format(date, 'MMM d, yyyy HH:mm')
+  return format(date, 'd MMM yyyy, HH:mm', { locale: ru })
 }
 
 const truncateText = (text, length) => {

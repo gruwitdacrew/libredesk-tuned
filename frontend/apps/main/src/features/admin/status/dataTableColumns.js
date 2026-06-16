@@ -1,6 +1,7 @@
 import { h } from 'vue'
 import dropdown from './dataTableDropdown.vue'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { CONVERSATION_DEFAULT_STATUSES_LIST } from '@/constants/conversation.js'
 
 const DEFAULT_STATUS_KEY = {
@@ -20,12 +21,18 @@ export const createColumns = (t, { onEdit } = {}) => [
       const name = row.getValue('name')
       const isDefault = CONVERSATION_DEFAULT_STATUSES_LIST.includes(name)
       const label = isDefault ? t(DEFAULT_STATUS_KEY[name]) : name
-      return h('div', { class: 'text-center' },
+      return h(
+        'div',
+        { class: 'text-center' },
         onEdit && !isDefault
-          ? h('span', {
-              class: 'text-primary hover:underline cursor-pointer',
-              onClick: () => onEdit(row.original)
-            }, label)
+          ? h(
+              'span',
+              {
+                class: 'text-primary hover:underline cursor-pointer',
+                onClick: () => onEdit(row.original)
+              },
+              label
+            )
           : label
       )
     }
@@ -46,7 +53,11 @@ export const createColumns = (t, { onEdit } = {}) => [
       return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('created_at'), 'PPpp'))
+      return h(
+        'div',
+        { class: 'text-center' },
+        format(row.getValue('created_at'), 'PPpp', { locale: ru })
+      )
     }
   },
   {

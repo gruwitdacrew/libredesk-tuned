@@ -96,9 +96,7 @@
           <div></div>
           <DialogTrigger as-child>
             <Button @click="openHolidayForm = true">
-              {{
-                t('businessHour.newHoliday')
-              }}
+              {{ t('businessHour.newHoliday') }}
             </Button>
           </DialogTrigger>
         </div>
@@ -112,16 +110,19 @@
       <DialogContent class="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {{
-              t('businessHour.newHoliday')
-            }}
+            {{ t('businessHour.newHoliday') }}
           </DialogTitle>
           <DialogDescription />
         </DialogHeader>
         <div class="grid gap-4 py-4">
           <div class="grid grid-cols-4 items-center gap-4">
             <Label for="holiday_name" class="text-right"> {{ t('globals.terms.name') }} </Label>
-            <Input id="holiday_name" ref="holidayNameRef" v-model="holidayName" class="col-span-3" />
+            <Input
+              id="holiday_name"
+              ref="holidayNameRef"
+              v-model="holidayName"
+              class="col-span-3"
+            />
           </div>
           <div class="grid grid-cols-4 items-center gap-4">
             <Label for="date" class="text-right"> {{ t('globals.terms.date') }} </Label>
@@ -139,7 +140,7 @@
                   <CalendarIcon class="mr-2 h-4 w-4" />
                   {{
                     holidayDate && !isNaN(new Date(holidayDate).getTime())
-                      ? format(new Date(holidayDate), 'MMMM dd, yyyy')
+                      ? format(new Date(holidayDate), 'MMMM dd, yyyy', { locale: ru })
                       : t('globals.terms.pickDate')
                   }}
                 </Button>
@@ -170,12 +171,19 @@ import { createFormSchema } from './formSchema.js'
 import { Checkbox } from '@shared-ui/components/ui/checkbox/index.js'
 import { Label } from '@shared-ui/components/ui/label/index.js'
 import { RadioGroup, RadioGroupItem } from '@shared-ui/components/ui/radio-group/index.js'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@shared-ui/components/ui/form/index.js'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@shared-ui/components/ui/form/index.js'
 import { Calendar } from '@shared-ui/components/ui/calendar/index.js'
 import { Input } from '@shared-ui/components/ui/input/index.js'
 import { Popover, PopoverContent, PopoverTrigger } from '@shared-ui/components/ui/popover/index.js'
 import { cn } from '@shared-ui/lib/utils.js'
 import { format } from 'date-fns'
+import { ru } from 'date-fns/locale'
 import { WEEKDAYS } from '../../../constants/date.js'
 import { Calendar as CalendarIcon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
@@ -214,7 +222,10 @@ const props = defineProps({
 })
 
 const submitLabel = computed(() => {
-  return props.submitLabel || (props.isNewForm ? t('globals.messages.create') : t('globals.messages.save'))
+  return (
+    props.submitLabel ||
+    (props.isNewForm ? t('globals.messages.create') : t('globals.messages.save'))
+  )
 })
 
 let holidays = reactive([])
