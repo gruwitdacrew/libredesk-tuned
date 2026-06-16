@@ -56,7 +56,11 @@ import {
   Link,
   BarChart3,
   CircleUser,
-  Contact
+  Contact,
+  MessageCircle,
+  TriangleAlert,
+  CircleCheck,
+  BadgeCheck
 } from 'lucide-vue-next'
 
 const navIconMap = {
@@ -83,6 +87,16 @@ const navIconMap = {
   CircleUser,
   Contact
 }
+
+// Иконки вкладок инбокса (поле icon в INBOX_TABS).
+const tabIconMap = {
+  List,
+  Mail,
+  MessageCircle,
+  TriangleAlert,
+  CircleCheck,
+  BadgeCheck
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -106,6 +120,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@main/stores/user'
 import { useConversationStore } from '@main/stores/conversation'
+import { INBOX_TABS } from '@main/constants/conversation'
 import SwipeWrapper from '@main/components/layout/SwipeWrapper.vue'
 
 defineProps({
@@ -488,65 +503,13 @@ const viewToDelete = ref(null)
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
+              <SidebarMenuItem v-for="tab in INBOX_TABS" :key="tab.key">
                 <SidebarMenuButton
-                  :isActive="isActiveParent('/inboxes/all')"
-                  @click="navigateToInbox('all')"
+                  :isActive="isActiveParent('/inboxes/' + tab.key)"
+                  @click="navigateToInbox(tab.key)"
                 >
-                  <List />
-                  <span>
-                    {{ t('globals.messages.all') }}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  :isActive="isActiveParent('/inboxes/active-channel')"
-                  @click="navigateToInbox('all')"
-                >
-                  <List />
-                  <span> Активный (канал связи) </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  :isActive="isActiveParent('/inboxes/active-widget')"
-                  @click="navigateToInbox('all')"
-                >
-                  <List />
-                  <span> Активный (виджет) </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  :isActive="isActiveParent('/inboxes/escalated')"
-                  @click="navigateToInbox('all')"
-                >
-                  <List />
-                  <span> Эскалированный </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  :isActive="isActiveParent('/inboxes/completed')"
-                  @click="navigateToInbox('all')"
-                >
-                  <List />
-                  <span> Завершенный </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  :isActive="isActiveParent('/inboxes/all')"
-                  @click="navigateToInbox('all')"
-                >
-                  <List />
-                  <span> Обработанный </span>
+                  <component :is="tabIconMap[tab.icon]" />
+                  <span>{{ tab.labelKey ? t(tab.labelKey) : tab.label }}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <!-- Team Inboxes -->

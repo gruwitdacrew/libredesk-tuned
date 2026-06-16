@@ -13,6 +13,7 @@ import { getI18n } from '../i18n'
 import {
   CONVERSATION_LIST_TYPE,
   CONVERSATION_DEFAULT_STATUSES,
+  INBOX_SOURCE,
   TAG_ACTION
 } from '@/constants/conversation'
 import { useThrottleFn } from '@vueuse/core'
@@ -155,6 +156,7 @@ export const useConversationStore = defineStore('conversation', () => {
     status: CONVERSATION_DEFAULT_STATUSES.OPEN,
     sortField: 'newest',
     listFilters: [],
+    activeSource: null,
     viewID: 0,
     teamID: 0,
     loading: false,
@@ -194,6 +196,15 @@ export const useConversationStore = defineStore('conversation', () => {
       resetConversations()
       reFetchConversationsList()
     }
+  }
+
+  // Применяет правила вкладки (статус + источник) и сбрасывает список.
+  // Сброс делается явно: для всех вкладок listType остаётся ALL, поэтому
+  // встроенный гард сброса в fetchConversationsList не срабатывает.
+  function setActiveTab(tab) {
+    conversations.status = tab.status
+    conversations.activeSource = tab.source
+    resetConversations()
   }
 
   const getListStatus = computed(() => {
@@ -260,6 +271,14 @@ export const useConversationStore = defineStore('conversation', () => {
     }
   }
 
+  // Соответствие источнику активной вкладки (виджет = livechat, канал связи = не livechat).
+  // Подстраховывает клиент для realtime-добавленных диалогов.
+  function belongsToTab(conv) {
+    if (!conversations.activeSource) return true
+    const isWidget = conv.inbox_channel === 'livechat'
+    return conversations.activeSource === INBOX_SOURCE.WIDGET ? isWidget : !isWidget
+  }
+
   const conversationsList = computed(() => {
     if (!conversations.data) return []
     let filteredConversations = conversations.data
@@ -269,7 +288,7 @@ export const useConversationStore = defineStore('conversation', () => {
         (conv) => conv.status === conversations.status
       )
     }
-    filteredConversations = filteredConversations.filter(belongsToList)
+    filteredConversations = filteredConversations.filter(belongsToList).filter(belongsToTab)
 
     return [...filteredConversations].sort((a, b) => {
       const field = sortFieldMap[conversations.sortField]?.field
@@ -546,13 +565,23 @@ export const useConversationStore = defineStore('conversation', () => {
     conversations.listType = listType
     if (teamID) conversations.teamID = teamID
     if (viewID) conversations.viewID = viewID
+    filters = filters.filter(
+      (f) => f.model !== 'conversation_statuses' && f.model !== 'inboxes'
+    )
     if (conversations.status) {
-      filters = filters.filter((f) => f.model !== 'conversation_statuses')
       filters.push({
         model: 'conversation_statuses',
         field: 'name',
         operator: 'equals',
         value: conversations.status
+      })
+    }
+    if (conversations.activeSource) {
+      filters.push({
+        model: 'inboxes',
+        field: 'channel',
+        operator: conversations.activeSource === INBOX_SOURCE.WIDGET ? 'equals' : 'not equals',
+        value: 'livechat'
       })
     }
     conversations.listFilters = filters
@@ -603,7 +632,6 @@ export const useConversationStore = defineStore('conversation', () => {
           filters
         })
       case CONVERSATION_LIST_TYPE.ALL:
-        filters = []
         return await api.getAllConversations({
           page: page,
           page_size: CONV_LIST_PAGE_SIZE,
@@ -1156,6 +1184,7 @@ export const useConversationStore = defineStore('conversation', () => {
     fetchPriorities,
     setListSortField,
     setListStatus,
+    setActiveTab,
     removeMacroAction,
     getMacro,
     setMacro,

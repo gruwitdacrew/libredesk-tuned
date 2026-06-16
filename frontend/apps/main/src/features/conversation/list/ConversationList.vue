@@ -11,8 +11,8 @@
 
     <!-- Filters (hidden when bulk selecting) -->
     <div v-else class="p-2 flex justify-between items-center">
-      <!-- Status dropdown-menu, hidden when a view is selected as views are pre-filtered -->
-      <DropdownMenu v-if="!route.params.viewID">
+      <!-- Status dropdown-menu, shown only on the "All" tab; preset tabs define their own status. -->
+      <DropdownMenu v-if="!route.params.viewID && route.params.type === 'all'">
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" class="w-30">
             <div>
@@ -165,6 +165,7 @@ import {
 } from '@shared-ui/components/ui/dropdown-menu'
 import { SidebarTrigger } from '@shared-ui/components/ui/sidebar'
 import { useConversationStore } from '@/stores/conversation'
+import { INBOX_TABS_BY_KEY } from '@/constants/conversation'
 import { useBulkActionPermissions } from '@/composables/useBulkActionPermissions'
 import EmptyList from '@/features/conversation/list/ConversationEmptyList.vue'
 import ConversationBulkActionToolbar from '@/features/conversation/list/ConversationBulkActionToolbar.vue'
@@ -182,6 +183,10 @@ const title = computed(() => {
   const typeKey = route.meta?.typeKey?.(route)
   if (typeKey) {
     return t(typeKey)
+  }
+  const tab = INBOX_TABS_BY_KEY[route.params?.type]
+  if (tab) {
+    return tab.labelKey ? t(tab.labelKey) : tab.label
   }
   const key = route.meta?.titleKey
   if (!key) return ''
