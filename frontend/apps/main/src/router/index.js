@@ -117,7 +117,7 @@ const routes = [
         meta: { titleKey: 'globals.terms.search', hidePageHeader: true }
       },
       {
-        path: '/inboxes/:type(assigned|unassigned|all|mentioned)?',
+        path: '/inboxes/:type(assigned|unassigned|all|mentioned|active-channel|active-widget|escalated|completed|processed)?',
         name: 'inboxes',
         redirect: '/inboxes/all',
         component: InboxLayout,
