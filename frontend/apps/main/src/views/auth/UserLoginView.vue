@@ -44,9 +44,7 @@
 
         <form @submit.prevent="loginAction" class="space-y-3">
           <div class="space-y-2">
-            <Label for="email" class="text-muted-foreground">{{
-              t('globals.terms.email')
-            }}</Label>
+            <Label for="email" class="text-muted-foreground">{{ t('globals.terms.email') }}</Label>
             <Input
               id="email"
               type="text"
@@ -90,11 +88,7 @@
             </router-link>
           </div>
 
-          <Button
-            class="w-full"
-            :disabled="isLoading"
-            type="submit"
-          >
+          <Button class="w-full" :disabled="isLoading" type="submit">
             <span v-if="isLoading" class="flex items-center justify-center">
               <div
                 class="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-3"
@@ -228,7 +222,7 @@ const loginAction = () => {
       if (nextParam) {
         router.push(nextParam)
       } else {
-        router.push({ name: 'inboxes' })
+        router.push({ name: 'inbox-conversation' })
       }
     })
     .catch((error) => {
