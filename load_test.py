@@ -10,12 +10,12 @@ import statistics
 
 @dataclass
 class TestConfig:
-    base_url: str = "http://localhost:9000"
-    inbox_id: str = "0f96a6a7-8e24-4103-bf45-bc59294dd572"
+    base_url: str = "http://192.168.19.213:9000"
+    inbox_id: str = "ae23c2d0-cc78-49bd-9e03-c70482f94473"
     
-    duration_seconds: int
-    users: int
-    messages_per_minute: int
+    duration_seconds: int = 60
+    users: int = 5
+    messages_per_minute: int = 1
     
     questions: List[str] = field(default_factory=lambda: [
         "Какой курс подойдет геологу?", "Какой курс подойдет нефтянику?", "Какой курс подойдет инженеру по бурению?",
@@ -38,17 +38,25 @@ class LoadTester:
         self.active_sessions = 0
         self.lock = asyncio.Lock()
     
-    async def init_conversation(self, session: aiohttp.ClientSession) -> tuple[Optional[str], Optional[str]]:
+    async def init_conversation(
+        self,
+        session: aiohttp.ClientSession,
+        message: str,
+    ) -> tuple[Optional[str], Optional[str]]:
         """Создание новой беседы. Возвращает (session_token, conversation_uuid)"""
         try:
             async with session.post(
                 f"{self.config.base_url}/api/v1/widget/chat/conversations/init",
                 headers={"X-Libredesk-Inbox-ID": self.config.inbox_id},
-                json={}
+                json={"message": message},
             ) as resp:
                 data = await resp.json()
-                session_token = data.get("data", {}).get("session_token")
-                conversation_uuid = data.get("data", {}).get("conversation_uuid")
+
+                payload = data.get("data") or {}
+
+                session_token = payload.get("session_token")
+                conversation_uuid = payload.get("conversation_uuid")
+
                 return session_token, conversation_uuid
         except Exception as e:
             print(f"Init error: {e}")
@@ -91,7 +99,7 @@ class LoadTester:
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     data = json.loads(msg.data)
-                    if data.get("type") == "NEW_MESSAGE":
+                    if data.get("type") == "new_message":
                         await response_queue.put(time.time())
                 elif msg.type == aiohttp.WSMsgType.ERROR:
                     break
@@ -99,28 +107,54 @@ class LoadTester:
             pass
     
     async def simulate_user(self, user_id: int):
-        """Симуляция одного пользователя"""
         async with aiohttp.ClientSession() as session:
-            # 1. Инициализация беседы
-            token, conv_uuid = await self.init_conversation(session)
+
+            first_question = random.choice(self.config.questions)
+
+            send_time = time.time()
+
+            token, conv_uuid = await self.init_conversation(
+                session,
+                first_question,
+            )
+
             if not token or not conv_uuid:
                 return
-            
-            # 2. Подключение к WebSocket
+
             ws = await self.connect_websocket(session, token)
             if not ws:
                 return
-            
-            # 3. Очередь для ответов
+
             response_queue = asyncio.Queue()
-            listener = asyncio.create_task(self.listen_websocket(ws, response_queue))
-            
+            listener = asyncio.create_task(
+                self.listen_websocket(ws, response_queue)
+            )
+
             async with self.lock:
                 self.active_sessions += 1
-            
+
+            # ждём ответ на сообщение, отправленное в init
+            try:
+                receive_time = await asyncio.wait_for(
+                    response_queue.get(),
+                    timeout=30.0,
+                )
+
+                elapsed = receive_time - send_time
+
+                async with self.lock:
+                    self.metrics.total_messages += 1
+                    self.metrics.successful_messages += 1
+                    self.metrics.response_times.append(elapsed)
+
+            except asyncio.TimeoutError:
+                async with self.lock:
+                    self.metrics.total_messages += 1
+                    self.metrics.failed_messages += 1
+
             interval = 60.0 / self.config.messages_per_minute
             end_time = time.time() + self.config.duration_seconds
-            
+
             while time.time() < end_time:
                 question = random.choice(self.config.questions)
                 send_time = time.time()
