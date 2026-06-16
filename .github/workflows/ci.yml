@@ -9,10 +9,7 @@ jobs:
   deploy:
     runs-on: self-hosted
 
-    steps:
-      - name: Fix permissions
-        run: sudo chown -R bot:bot /home/bot/libredesk-runner/_work || true
-    
+    steps:   
       - name: Checkout repository
         uses: actions/checkout@v4
 
