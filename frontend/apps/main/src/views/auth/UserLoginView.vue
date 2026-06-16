@@ -222,7 +222,12 @@ const loginAction = () => {
       if (nextParam) {
         router.push(nextParam)
       } else {
-        router.push({ name: 'inbox-conversation' })
+        router.push({
+          name: 'inbox-conversation',
+          params: {
+            type: 'all'
+          }
+        })
       }
     })
     .catch((error) => {
