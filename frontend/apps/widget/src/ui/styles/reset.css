@@ -55,3 +55,9 @@ h6 {
   font-weight: bold;
   line-height: 1.5rem;
 }
+
+ul,
+ol {
+  margin-top: 0px;
+  padding-top: 0px;
+}
