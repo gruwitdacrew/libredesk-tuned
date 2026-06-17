@@ -62,9 +62,8 @@
               v-if="message.content_type === 'text'"
               class="mb-1 native-html whitespace-pre-wrap"
               :class="{ 'mb-3': message.attachments.length > 0 }"
-            >
-              {{ sanitizedContent }}
-            </div>
+              v-html="sanitizedContent"
+            ></div>
             <div v-else ref="messageContentEl" @click="onMessageContentClick">
               <Letter
                 :html="sanitizedContent"
@@ -202,6 +201,7 @@ import CSATResponseDisplay from './CSATResponseDisplay.vue'
 import api from '@main/api'
 import { containsQuoteMarkers } from '@shared-ui/utils/quotedContent.js'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const extendedCssProperties = [...allowedCssProperties, 'transform', 'transform-origin']
 
@@ -273,7 +273,8 @@ const sanitizedContent = computed(() => {
   if (props.message.meta?.is_csat) {
     return t('globals.messages.pleaseRateConversation')
   }
-  return marked(props.message.content, { breaks: true, async: false }) || ''
+  const html = marked(props.message.content, { breaks: true, async: false }) || ''
+  return DOMPurify.sanitize(html)
 })
 
 const nonInlineAttachments = computed(() =>
