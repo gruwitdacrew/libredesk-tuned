@@ -76,12 +76,6 @@ const emitter = useEmitter()
 
 function isStatusDisabled() {
   switch (conversationStore.current?.status) {
-    case CONVERSATION_DEFAULT_STATUSES.NEW:
-      return true
-
-    case CONVERSATION_DEFAULT_STATUSES.ARCHIVE:
-      return true
-
     case CONVERSATION_DEFAULT_STATUSES.ESCALATION:
       return true
 
@@ -94,11 +88,7 @@ function isStatusDisabled() {
 }
 
 function filterConversationOptions() {
-  return conversationStore.statusOptions.filter(
-    (item) =>
-      item.label === CONVERSATION_DEFAULT_STATUSES.IN_PROGRESS ||
-      item.label === CONVERSATION_DEFAULT_STATUSES.OPEN
-  )
+  return conversationStore.statusOptionsNoSnooze
 }
 
 const goBack = () => {
