@@ -59,15 +59,6 @@
           <DropdownMenuItem @click="handleSortChange('started_last')">
             {{ $t('conversation.sort.startedLast') }}
           </DropdownMenuItem>
-          <DropdownMenuItem @click="handleSortChange('waiting_longest')">
-            {{ $t('conversation.sort.waitingLongest') }}
-          </DropdownMenuItem>
-          <DropdownMenuItem @click="handleSortChange('next_sla_target')">
-            {{ $t('conversation.sort.nextSLATarget') }}
-          </DropdownMenuItem>
-          <DropdownMenuItem @click="handleSortChange('priority_first')">
-            {{ $t('conversation.sort.priorityFirst') }}
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
