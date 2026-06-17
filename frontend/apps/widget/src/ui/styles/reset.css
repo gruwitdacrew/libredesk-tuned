@@ -1,48 +1,57 @@
 :host {
-	all: initial;
+  all: initial;
 
-	position: fixed;
-	/* Отступ от чёлки / home-индикатора на мобильных; на десктопе safe-area = 0 → ровно 20px. */
-	right: max(20px, env(safe-area-inset-right));
-	bottom: max(20px, env(safe-area-inset-bottom));
-	z-index: 2147483000;
+  position: fixed;
+  /* Отступ от чёлки / home-индикатора на мобильных; на десктопе safe-area = 0 → ровно 20px. */
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 2147483000;
 
-	display: block;
-	font-family: var(--cw-font-family);
-	font-size: var(--cw-font-size);
-	line-height: var(--cw-line-height);
-	color: var(--cw-text-color);
+  display: block;
+  font-family: var(--cw-font-family);
+  font-size: var(--cw-font-size);
+  line-height: var(--cw-line-height);
+  color: var(--cw-text-color);
 }
 
 *,
 *::before,
 *::after {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 button {
-	font: inherit;
-	color: inherit;
-	background: none;
-	border: none;
-	cursor: pointer;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
 
 input,
 textarea {
-	font: inherit;
-	color: inherit;
+  font: inherit;
+  color: inherit;
 }
 
 textarea {
-	resize: none;
+  resize: none;
 }
 
 svg {
-	display: block;
-	flex-shrink: 0;
+  display: block;
+  flex-shrink: 0;
 }
 
-
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  line-height: 1.5rem;
+}
