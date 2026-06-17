@@ -118,21 +118,6 @@ export const useConversationStore = defineStore('conversation', () => {
       model: 'conversations',
       field: 'created_at',
       order: 'desc'
-    },
-    waiting_longest: {
-      model: 'conversations',
-      field: 'waiting_since',
-      order: 'asc'
-    },
-    next_sla_target: {
-      model: 'conversations',
-      field: 'next_sla_deadline_at',
-      order: 'asc'
-    },
-    priority_first: {
-      model: 'conversations',
-      field: 'priority_id',
-      order: 'desc'
     }
   }
 
@@ -565,9 +550,7 @@ export const useConversationStore = defineStore('conversation', () => {
     conversations.listType = listType
     if (teamID) conversations.teamID = teamID
     if (viewID) conversations.viewID = viewID
-    filters = filters.filter(
-      (f) => f.model !== 'conversation_statuses' && f.model !== 'inboxes'
-    )
+    filters = filters.filter((f) => f.model !== 'conversation_statuses' && f.model !== 'inboxes')
     if (conversations.status) {
       filters.push({
         model: 'conversation_statuses',
