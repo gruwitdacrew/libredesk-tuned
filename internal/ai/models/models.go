@@ -153,7 +153,7 @@ func (r *AIResponse) PrepareAnswer(escalationVariant int) (string, string) {
 
 	case "smalltalk_greeting":
 		// Случай 6: приветствие
-		return "Здравствуйте! Я помогу с вопросами по курсам. Могу рассказать о:\n* программе,\n* датах,\n* стоимости,\n* формате обучения,\n* документах,\n* подобрать подходящий курс.\n\nНапишите, что именно вас интересует.", "msg_greeting"
+		return "Здравствуйте!\n\nКакой вопрос вас интересует?", "msg_greeting"
 
 	default:
 		// Неизвестный refusal_reason или его отсутствие — эскалация
