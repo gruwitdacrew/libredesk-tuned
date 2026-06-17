@@ -1349,9 +1349,9 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			}
 		}
 		answer, msg_type := aiReply.PrepareAnswer(variant)
-		if msg_type != "msg_error" {
-			m.aiCache.Set(question, aiReply)
-		}
+		// if msg_type != "msg_error" {
+		// 	m.aiCache.Set(question, aiReply)
+		// }
 
 		if msg_type == "msg_escalation_1" {
 			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusEscalation, "", user)

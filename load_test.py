@@ -10,18 +10,18 @@ import statistics
 
 @dataclass
 class TestConfig:
-    base_url: str = "http://192.168.19.213:9000"
-    inbox_id: str = "ae23c2d0-cc78-49bd-9e03-c70482f94473"
+    base_url: str = "http://localhost:9000"
+    inbox_id: str = "0f96a6a7-8e24-4103-bf45-bc59294dd572"
     
-    duration_seconds: int = 60
-    users: int = 5
-    messages_per_minute: int = 1
+    duration_seconds: int = 10
+    interval: int = 20
+    users: int = 1
     
     questions: List[str] = field(default_factory=lambda: [
         "Какой курс подойдет геологу?", "Какой курс подойдет нефтянику?", "Какой курс подойдет инженеру по бурению?",
         "Сколько стоит обучение?", "Есть ли скидки?", "Можно ли оплатить по частям?",
         "Как долго длится курс?", "Выдаётся ли сертификат?", "Какие документы нужны?",
-        "Кто ведёт курсы?",
+        "Кто ведёт курсы?", "Как проходит курс?", "Что меня ждет на этом курсе?"
     ])
 
 @dataclass
@@ -42,7 +42,7 @@ class LoadTester:
         self,
         session: aiohttp.ClientSession,
         message: str,
-    ) -> tuple[Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """Создание новой беседы. Возвращает (session_token, conversation_uuid)"""
         try:
             async with session.post(
@@ -55,9 +55,10 @@ class LoadTester:
                 payload = data.get("data") or {}
 
                 session_token = payload.get("session_token")
-                conversation_uuid = payload.get("conversation_uuid")
+                conversation_uuid = payload.get("conversation", {}).get("uuid")
+                user_id = payload.get("user", {}).get("user_id")
 
-                return session_token, conversation_uuid
+                return session_token, conversation_uuid, user_id
         except Exception as e:
             print(f"Init error: {e}")
             return None, None
@@ -69,10 +70,16 @@ class LoadTester:
             ws = await session.ws_connect(ws_url)
             
             await ws.send_json({
-                "type": "JOIN",
+                "type": "join",
                 "token": token,
                 "data": {"inbox_id": self.config.inbox_id}
             })
+
+            try:
+                await ws.receive(timeout=5)
+            except asyncio.TimeoutError:
+                print("no namaste")
+
             return ws
         except Exception as e:
             print(f"WebSocket error: {e}")
@@ -98,31 +105,42 @@ class LoadTester:
         try:
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
-                    data = json.loads(msg.data)
-                    if data.get("type") == "new_message":
-                        await response_queue.put(time.time())
+                    raw = msg.data
+                    data = json.loads(raw)
+                    event_type = data.get("type")
+                    
+                    if event_type == "new_message":
+                        content = data.get("data", {}).get("content", "")
+                        await response_queue.put((time.time(), content))
+                        
                 elif msg.type == aiohttp.WSMsgType.ERROR:
+                    print("[WS] ERROR")
                     break
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"WebSocket listener error: {e}")
     
-    async def simulate_user(self, user_id: int):
+    async def simulate_user(self, user_id: int):       
         async with aiohttp.ClientSession() as session:
-
             first_question = random.choice(self.config.questions)
+
+            print(f"📤 Вопрос #1: \"{first_question[:50]}...\"")
 
             send_time = time.time()
 
-            token, conv_uuid = await self.init_conversation(
+            token, conv_uuid, user_token = await self.init_conversation(
                 session,
                 first_question,
             )
 
+            user_token = "Пользователь " + str(user_token)
+
             if not token or not conv_uuid:
+                print(f"[{user_token}] ❌ Ошибка инициализации")
                 return
 
             ws = await self.connect_websocket(session, token)
             if not ws:
+                print(f"[{user_token}] ❌ Ошибка WebSocket")
                 return
 
             response_queue = asyncio.Queue()
@@ -135,61 +153,73 @@ class LoadTester:
 
             # ждём ответ на сообщение, отправленное в init
             try:
-                receive_time = await asyncio.wait_for(
+                receive_time, content = await asyncio.wait_for(
                     response_queue.get(),
-                    timeout=30.0,
+                    timeout=90.0,
                 )
 
                 elapsed = receive_time - send_time
+                preview = content[:80] + "..." if len(content) > 80 else content
 
-                async with self.lock:
-                    self.metrics.total_messages += 1
-                    self.metrics.successful_messages += 1
-                    self.metrics.response_times.append(elapsed)
+                print(f"[{user_token}] Ответ #1 получен за {elapsed:.2f}с: {preview}")
+
 
             except asyncio.TimeoutError:
                 async with self.lock:
                     self.metrics.total_messages += 1
                     self.metrics.failed_messages += 1
+                print(f"[{user_token}] ❌ Таймаут ответа (30с)")
 
-            interval = 60.0 / self.config.messages_per_minute
+            interval = self.config.interval
             end_time = time.time() + self.config.duration_seconds
+            msg_count = 1
+
+            await asyncio.sleep(interval)
 
             while time.time() < end_time:
                 question = random.choice(self.config.questions)
                 send_time = time.time()
                 
-                # 4. Отправка сообщения
+                print(f"[{user_token}] 📤 Вопрос #{msg_count + 1}: \"{question[:50]}...\"")
+                
                 success = await self.send_message(session, token, conv_uuid, question)
                 
                 if not success:
                     async with self.lock:
                         self.metrics.total_messages += 1
                         self.metrics.failed_messages += 1
+                    print(f"[{user_token}] ❌ Ошибка отправки сообщения #{msg_count + 1}")
                     await asyncio.sleep(interval)
                     continue
                 
-                # 5. Ожидание ответа через WebSocket (таймаут 30 сек)
                 try:
-                    receive_time = await asyncio.wait_for(response_queue.get(), timeout=30.0)
+                    receive_time, content = await asyncio.wait_for(response_queue.get(), timeout=90.0)
                     elapsed = receive_time - send_time
-                    
+
                     async with self.lock:
                         self.metrics.total_messages += 1
                         self.metrics.successful_messages += 1
                         self.metrics.response_times.append(elapsed)
+                    
+                    preview = content[:80] + "..." if len(content) > 80 else content
+                    print(f"[{user_token}] Ответ #{msg_count + 1} за {elapsed:.2f}с: {preview}")
+                    
                 except asyncio.TimeoutError:
                     async with self.lock:
                         self.metrics.total_messages += 1
                         self.metrics.failed_messages += 1
+                    print(f"[{user_token}] ❌ Таймаут ответа #{msg_count + 1}")
                 
+                msg_count += 1
                 await asyncio.sleep(interval)
             
             listener.cancel()
             await ws.close()
-            
+
             async with self.lock:
                 self.active_sessions -= 1
+            
+            print(f"[{user_token}] Завершено. Отправлено сообщений: {msg_count}")
     
     async def run(self):
         """Запуск теста"""
@@ -198,25 +228,19 @@ class LoadTester:
         print(f"{'='*60}")
         print(f"Пользователей: {self.config.users}")
         print(f"Длительность: {self.config.duration_seconds} сек")
-        print(f"Сообщений/мин: {self.config.messages_per_minute}")
+        print(f"Интервал сообщений/сек: {self.config.interval}")
         print(f"{'='*60}\n")
         
-        # Мониторинг
-        async def monitor():
-            while True:
-                await asyncio.sleep(5)
-                active = self.active_sessions
-                total = self.metrics.total_messages
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] Активно: {active}, Сообщений: {total}")
-        
-        monitor_task = asyncio.create_task(monitor())
         start_time = time.time()
         
         # Запуск всех пользователей
-        tasks = [asyncio.create_task(self.simulate_user(i)) for i in range(self.config.users)]
+        tasks = []
+        for i in range(self.config.users):
+            task = asyncio.create_task(self.simulate_user(i))
+            tasks.append(task)
+            await asyncio.sleep(2)  # ← задержка между запусками
         await asyncio.gather(*tasks)
         
-        monitor_task.cancel()
         total_time = time.time() - start_time
         self.print_results(total_time)
     
@@ -240,7 +264,7 @@ class LoadTester:
         print(f"  RPS: {rps:.2f}")
         
         if times:
-            print(f"\n⏱️ ВРЕМЯ ОТВЕТА (сек):")
+            print(f"\nВРЕМЯ ОТВЕТА (сек):")
             print(f"  Среднее: {statistics.mean(times):.3f}")
             print(f"  Медиана: {statistics.median(times):.3f}")
             print(f"  p95: {self.percentile(times, 95):.3f}")
@@ -261,25 +285,10 @@ class LoadTester:
         return data[f]
 
 async def main():
-    # Тест 1: Долгая лёгкая нагрузка
     config1 = TestConfig(
-        users=5,
-        duration_seconds=120,
-        messages_per_minute=1
-    )
-
-    # Тест 2: Средняя нагрузка
-    config2 = TestConfig(
-        users=10,
-        duration_seconds=90,
-        messages_per_minute=2
-    )
-
-    # Тест 3: Кратковременная высокая нагрузка
-    config3 = TestConfig(
         users=20,
-        duration_seconds=60,
-        messages_per_minute=2
+        duration_seconds=30,
+        interval=15
     )
     
     tester1 = LoadTester(config1)
