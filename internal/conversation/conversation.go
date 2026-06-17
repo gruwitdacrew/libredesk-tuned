@@ -54,6 +54,7 @@ var (
 	conversationsAllowedFields      = []string{"status_id", "priority_id", "assigned_team_id", "assigned_user_id", "inbox_id", "last_message_at", "last_interaction_at", "created_at", "waiting_since", "next_sla_deadline_at", "priority_id"}
 	conversationStatusAllowedFields = []string{"id", "name"}
 	usersAllowedFields              = []string{"email"}
+	inboxesAllowedFields            = []string{"channel"}
 )
 
 const (
@@ -1719,6 +1720,7 @@ func (c *Manager) makeConversationsListQuery(viewingUserID, userID int, teamIDs 
 		"conversations":         conversationsAllowedFields,
 		"conversation_statuses": conversationStatusAllowedFields,
 		"users":                 usersAllowedFields,
+		"inboxes":               inboxesAllowedFields,
 	})
 }
 

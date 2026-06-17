@@ -223,7 +223,7 @@ const loginAction = () => {
         router.push(nextParam)
       } else {
         router.push({
-          name: 'inbox-conversation',
+          name: 'inboxes',
           params: {
             type: 'all'
           }
