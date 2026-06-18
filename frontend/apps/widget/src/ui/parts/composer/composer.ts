@@ -1,6 +1,8 @@
 import type { WidgetContext } from '@types'
 import { el, iconLabelButton } from '@utils'
 import { CHANNELS, isChannel } from '../../../core/static/channels'
+import { validateContact } from '@widget/utils/contactsValidation'
+import DOMPurify from 'dompurify'
 
 const MAX_LENGTH = 4000
 const WARN_THRESHOLD = MAX_LENGTH * 0.95
@@ -36,6 +38,38 @@ export const createComposer = (
     if (text.length === 0) {
       return
     }
+    const s = ctx.store.getStore()
+    if (!Object.is(s.escalation2State, null)) {
+      const validationResult = validateContact(text, s.escalation2State)
+
+      if (!validationResult) {
+        ctx.store.setStore((s) => ({
+          ...s,
+          messages: [
+            ...s.messages,
+            {
+              id: crypto.randomUUID(),
+              content: DOMPurify.sanitize(text, { ALLOWED_TAGS: ['p'] }),
+              type: 'plain',
+              author: 'user',
+              timestamp: Date.now()
+            },
+            {
+              id: crypto.randomUUID(),
+              content: 'Введите корректные контактные данные',
+              type: 'plain',
+              author: 'bot',
+              timestamp: Date.now()
+            }
+          ]
+        }))
+
+        textarea.value = ''
+        textarea.focus()
+        return
+      }
+    }
+
     onSend(text)
     textarea.value = ''
     textarea.focus()
@@ -62,13 +96,8 @@ export const createComposer = (
 
   const composer = el('form', { className: 'composer' }, [textarea, buttonSend])
 
-  /** «Диалог завершен» — показывается вместо ввода, когда диалог закрыт. */
   const doneText = el('p', { className: 'composer__done-text is-hidden', text: 'Диалог завершен' })
 
-  /**
-   * Кнопка перезапуска видна и в завершённом диалоге (под текстом), и на шаге выбора
-   * канала escalation_2 — тогда поднимается над заблокированным вводом (модификатор --top).
-   */
   const restartBtn = iconLabelButton({
     className: 'composer__restart is-hidden',
     icon: 'addNew',

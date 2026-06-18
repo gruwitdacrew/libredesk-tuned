@@ -79,20 +79,6 @@
         </AccordionContent>
       </AccordionItem>
 
-      <!-- Page visits (livechat only) -->
-      <AccordionItem
-        value="page_visits"
-        class="accordion-item"
-        v-if="conversationStore.current?.inbox_channel === 'livechat'"
-      >
-        <AccordionTrigger class="accordion-trigger">
-          {{ $t('conversation.sidebar.lastVisitedPages') }}
-        </AccordionTrigger>
-        <AccordionContent class="accordion-content">
-          <ConversationSideBarPageVisits />
-        </AccordionContent>
-      </AccordionItem>
-
       <!-- Contact notes -->
       <AccordionItem
         value="contact_notes"

@@ -45,12 +45,14 @@
     <!-- Messages & reply box -->
     <div class="flex flex-col flex-grow overflow-hidden">
       <MessageList class="flex-1 overflow-y-auto" />
-      <ReplyBox />
+      <!-- Поле ввода доступно только в открытом диалоге. -->
+      <ReplyBox v-if="conversationStore.current?.status === CONVERSATION_DEFAULT_STATUSES.OPEN" />
     </div>
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
+//@ts-nocheck
 import { useRouter, useRoute } from 'vue-router'
 import { useMediaQuery } from '@vueuse/core'
 import { ChevronLeft } from 'lucide-vue-next'
@@ -75,16 +77,12 @@ const conversationStore = useConversationStore()
 const emitter = useEmitter()
 
 function isStatusDisabled() {
-  switch (conversationStore.current?.status) {
-    case CONVERSATION_DEFAULT_STATUSES.ESCALATION:
-      return true
-
-    case CONVERSATION_DEFAULT_STATUSES.HANDLED:
-      return true
-
-    default:
-      return false
-  }
+  if (
+    conversationStore.current &&
+    conversationStore.current?.status! == CONVERSATION_DEFAULT_STATUSES.OPEN
+  ) {
+    return false
+  } else return true
 }
 
 function filterConversationOptions() {
