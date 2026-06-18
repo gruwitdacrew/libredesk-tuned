@@ -2,6 +2,7 @@ import type { WidgetContext } from '@types'
 import { el, iconLabelButton } from '@utils'
 import { CHANNELS, isChannel } from '../../../core/static/channels'
 import { validateContact } from '@widget/utils/contactsValidation'
+import DOMPurify from 'dompurify'
 
 const MAX_LENGTH = 4000
 const WARN_THRESHOLD = MAX_LENGTH * 0.95
@@ -48,7 +49,7 @@ export const createComposer = (
             ...s.messages,
             {
               id: crypto.randomUUID(),
-              content: text,
+              content: DOMPurify.sanitize(text, { ALLOWED_TAGS: ['p'] }),
               type: 'plain',
               author: 'user',
               timestamp: Date.now()
