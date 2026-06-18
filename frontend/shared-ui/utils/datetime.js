@@ -17,7 +17,7 @@ export function getRelativeTime(timestamp, now = new Date()) {
     const months = differenceInMonths(now, timestamp)
     const years = differenceInYears(now, timestamp)
 
-    if (mins === 0) return 'недавно'
+    if (mins === 0) return 'сейчас'
     if (mins < 60) return `${mins}м`
     if (hours < 24) return `${hours}ч`
     if (days < 31) return `${days}дн`
