@@ -9,6 +9,19 @@ import {
 
 import { ru } from 'date-fns/locale'
 
+function getYearForm(years) {
+  const pr = new Intl.PluralRules('ru-RU')
+  const rule = pr.select(years)
+
+  const forms = {
+    one: 'год',
+    few: 'года',
+    many: 'лет'
+  }
+
+  return forms[rule]
+}
+
 export function getRelativeTime(timestamp, now = new Date()) {
   try {
     const mins = differenceInMinutes(now, timestamp)
@@ -22,7 +35,7 @@ export function getRelativeTime(timestamp, now = new Date()) {
     if (hours < 24) return `${hours}ч`
     if (days < 31) return `${days}дн`
     if (months < 12) return `${months}мес`
-    return `${years}л.`
+    return `${years} ${getYearForm(years)}`
   } catch (error) {
     console.error('Error parsing time', error, 'timestamp', timestamp)
     return ''
