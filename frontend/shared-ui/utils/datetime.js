@@ -7,6 +7,8 @@ import {
   differenceInYears
 } from 'date-fns'
 
+import { ru } from 'date-fns/locale'
+
 export function getRelativeTime(timestamp, now = new Date()) {
   try {
     const mins = differenceInMinutes(now, timestamp)
@@ -38,9 +40,9 @@ export const formatDuration = (seconds, showSeconds = true) => {
 }
 
 export const formatMessageTimestamp = (time) => {
-  return format(time, 'd MMM, hh:mm a', { locale: 'ru' })
+  return format(time, 'd MMM, hh:mm a', { locale: ru })
 }
 
 export const formatFullTimestamp = (time) => {
-  return format(time, 'd MMM yyyy, hh:mm a', { locale: 'ru' })
+  return format(time, 'd MMM yyyy, hh:mm a', { locale: ru })
 }
