@@ -25,38 +25,45 @@ export const INBOX_SOURCE = { WIDGET: 'widget', CHANNEL: 'channel' }
 // Вкладки инбокса. key совпадает с параметром роута :type.
 // status: '' = любой статус; source: null = любой источник.
 export const INBOX_TABS = [
-  { key: 'all', labelKey: 'globals.messages.all', label: 'Все', icon: 'List', status: '', source: null },
+  {
+    key: 'all',
+    labelKey: 'globals.messages.all',
+    label: 'Все',
+    icon: 'List',
+    status: '',
+    source: null
+  },
   {
     key: 'active-channel',
-    label: 'Активный (канал связи)',
+    label: 'Активные (каналы связи)',
     icon: 'Mail',
     status: CONVERSATION_DEFAULT_STATUSES.OPEN,
     source: INBOX_SOURCE.CHANNEL
   },
   {
     key: 'active-widget',
-    label: 'Активный (виджет)',
+    label: 'Активные (чат-бот)',
     icon: 'MessageCircle',
     status: CONVERSATION_DEFAULT_STATUSES.OPEN,
     source: INBOX_SOURCE.WIDGET
   },
   {
     key: 'escalated',
-    label: 'Эскалированный',
+    label: 'Эскалированные',
     icon: 'TriangleAlert',
     status: CONVERSATION_DEFAULT_STATUSES.ESCALATION,
     source: null
   },
   {
     key: 'completed',
-    label: 'Завершенный',
+    label: 'Завершенные',
     icon: 'CircleCheck',
     status: CONVERSATION_DEFAULT_STATUSES.CLOSED,
     source: null
   },
   {
     key: 'processed',
-    label: 'Обработанный',
+    label: 'Обработанные',
     icon: 'BadgeCheck',
     status: CONVERSATION_DEFAULT_STATUSES.HANDLED,
     source: null

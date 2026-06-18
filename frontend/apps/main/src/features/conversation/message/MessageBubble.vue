@@ -182,7 +182,8 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
+// @ts-nocheck
 import { computed, ref, onMounted, nextTick } from 'vue'
 import { useConversationStore } from '@main/stores/conversation'
 import { useUserStore } from '@main/stores/user'
@@ -202,6 +203,7 @@ import api from '@main/api'
 import { containsQuoteMarkers } from '@shared-ui/utils/quotedContent.js'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
+import swapContactLinks from '@shared-ui/utils/contentSwapContactLinks.js'
 
 const extendedCssProperties = [...allowedCssProperties, 'transform', 'transform-origin']
 
@@ -273,7 +275,8 @@ const sanitizedContent = computed(() => {
   if (props.message.meta?.is_csat) {
     return t('globals.messages.pleaseRateConversation')
   }
-  const html = marked(props.message.content, { breaks: true, async: false }) || ''
+
+  const html = marked(swapContactLinks(props.message.content), { breaks: true, async: false }) || ''
   return DOMPurify.sanitize(html)
 })
 
