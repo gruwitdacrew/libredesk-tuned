@@ -17,12 +17,12 @@ export function getRelativeTime(timestamp, now = new Date()) {
     const months = differenceInMonths(now, timestamp)
     const years = differenceInYears(now, timestamp)
 
-    if (mins === 0) return 'now'
-    if (mins < 60) return `${mins}m`
-    if (hours < 24) return `${hours}h`
-    if (days < 31) return `${days}d`
-    if (months < 12) return `${months}mo`
-    return `${years}y`
+    if (mins === 0) return 'недавно'
+    if (mins < 60) return `${mins}м`
+    if (hours < 24) return `${hours}ч`
+    if (days < 31) return `${days}дн`
+    if (months < 12) return `${months}мес`
+    return `${years}л.`
   } catch (error) {
     console.error('Error parsing time', error, 'timestamp', timestamp)
     return ''
