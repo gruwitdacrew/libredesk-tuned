@@ -7,6 +7,21 @@ import {
   differenceInYears
 } from 'date-fns'
 
+import { ru } from 'date-fns/locale'
+
+function getYearForm(years) {
+  const pr = new Intl.PluralRules('ru-RU')
+  const rule = pr.select(years)
+
+  const forms = {
+    one: 'год',
+    few: 'года',
+    many: 'лет'
+  }
+
+  return forms[rule]
+}
+
 export function getRelativeTime(timestamp, now = new Date()) {
   try {
     const mins = differenceInMinutes(now, timestamp)
@@ -15,12 +30,12 @@ export function getRelativeTime(timestamp, now = new Date()) {
     const months = differenceInMonths(now, timestamp)
     const years = differenceInYears(now, timestamp)
 
-    if (mins === 0) return 'now'
-    if (mins < 60) return `${mins}m`
-    if (hours < 24) return `${hours}h`
-    if (days < 31) return `${days}d`
-    if (months < 12) return `${months}mo`
-    return `${years}y`
+    if (mins === 0) return 'сейчас'
+    if (mins < 60) return `${mins}м`
+    if (hours < 24) return `${hours}ч`
+    if (days < 31) return `${days}дн`
+    if (months < 12) return `${months}мес`
+    return `${years} ${getYearForm(years)}`
   } catch (error) {
     console.error('Error parsing time', error, 'timestamp', timestamp)
     return ''
@@ -38,9 +53,9 @@ export const formatDuration = (seconds, showSeconds = true) => {
 }
 
 export const formatMessageTimestamp = (time) => {
-  return format(time, 'd MMM, hh:mm a', { locale: 'ru' })
+  return format(time, 'd MMM, hh:mm a', { locale: ru })
 }
 
 export const formatFullTimestamp = (time) => {
-  return format(time, 'd MMM yyyy, hh:mm a', { locale: 'ru' })
+  return format(time, 'd MMM yyyy, hh:mm a', { locale: ru })
 }
