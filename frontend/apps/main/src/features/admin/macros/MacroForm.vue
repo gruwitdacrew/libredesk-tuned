@@ -48,7 +48,7 @@
       </FormItem>
     </FormField>
 
-    <FormField v-slot="{ componentField, handleChange }" name="visible_when">
+    <FormField v-if="false" v-slot="{ componentField, handleChange }" name="visible_when">
       <FormItem>
         <FormLabel>{{ t('globals.messages.visibleWhen') }}</FormLabel>
         <FormControl>
@@ -102,7 +102,11 @@
         </FormItem>
       </FormField>
 
-      <FormField v-if="form.values.visibility === 'team'" v-slot="{ componentField }" name="team_id">
+      <FormField
+        v-if="form.values.visibility === 'team'"
+        v-slot="{ componentField }"
+        name="team_id"
+      >
         <FormItem>
           <FormLabel>{{ t('globals.terms.team') }}</FormLabel>
           <FormControl>
@@ -117,7 +121,11 @@
         </FormItem>
       </FormField>
 
-      <FormField v-if="form.values.visibility === 'user'" v-slot="{ componentField }" name="user_id">
+      <FormField
+        v-if="form.values.visibility === 'user'"
+        v-slot="{ componentField }"
+        name="user_id"
+      >
         <FormItem>
           <FormLabel>{{ t('globals.terms.agent') }}</FormLabel>
           <FormControl>
@@ -143,7 +151,13 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { Button } from '@shared-ui/components/ui/button/index.js'
 import { Spinner } from '@shared-ui/components/ui/spinner/index.js'
 import { Input } from '@shared-ui/components/ui/input/index.js'
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@shared-ui/components/ui/form/index.js'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@shared-ui/components/ui/form/index.js'
 import ActionBuilder from '@/features/admin/macros/ActionBuilder.vue'
 import { useConversationFilters } from '../../../composables/useConversationFilters.js'
 import { useUsersStore } from '../../../stores/users.js'
