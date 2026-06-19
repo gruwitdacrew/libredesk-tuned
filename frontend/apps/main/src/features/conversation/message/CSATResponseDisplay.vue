@@ -7,9 +7,7 @@
       </div>
 
       <div v-if="csatResponse.rating" class="flex items-center gap-2 mb-2">
-        <span class="text-lg">{{ getRatingEmoji(csatResponse.rating) }}</span>
         <span class="text-sm font-medium">{{ getRatingText(csatResponse.rating) }}</span>
-        <span class="text-xs text-muted-foreground">{{ csatResponse.rating }}/5</span>
       </div>
 
       <p
@@ -54,18 +52,10 @@ const hasResponse = computed(() =>
   csatResponse.value && (csatResponse.value.rating || csatResponse.value.feedback)
 )
 
-const getRatingEmoji = (rating) => {
-  const emojis = { 1: '😢', 2: '😕', 3: '😊', 4: '😃', 5: '🤩' }
-  return emojis[rating] || ''
-}
-
 const getRatingText = (rating) => {
   const keys = {
     1: 'globals.terms.poor',
-    2: 'globals.terms.fair',
-    3: 'globals.terms.good',
-    4: 'globals.terms.great',
-    5: 'globals.terms.excellent'
+    2: 'globals.terms.excellent',
   }
   return keys[rating] ? t(keys[rating]) : ''
 }
