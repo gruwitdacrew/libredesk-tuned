@@ -298,7 +298,7 @@ const form = useForm({
     agent_id: null,
     subject: '',
     content: '',
-    contact_email: '',
+    contact_email: ''
   }
 })
 
@@ -370,6 +370,11 @@ const createConversation = form.handleSubmit(async (values) => {
     values.inbox_id = Number(values.inbox_id)
     values.team_id = values.team_id ? Number(values.team_id) : null
     values.agent_id = values.agent_id ? Number(values.agent_id) : null
+    // Контакты анонимные: поля "Имя"/"Фамилия" скрыты. Если имя не подставилось
+    // из выбранного контакта, берём локальную часть email — бэкенд требует first_name.
+    if (!values.first_name) {
+      values.first_name = values.contact_email.split('@')[0] || values.contact_email
+    }
     // Array of attachment ids.
     values.attachments = mediaFiles.value.map((file) => file.id)
     // Initiator of this conversation is always agent

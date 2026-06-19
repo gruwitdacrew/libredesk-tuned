@@ -53,9 +53,9 @@ export const formatDuration = (seconds, showSeconds = true) => {
 }
 
 export const formatMessageTimestamp = (time) => {
-  return format(time, 'd MMM, hh:mm a', { locale: ru })
+  return format(time, 'd MMM, HH:mm', { locale: ru })
 }
 
 export const formatFullTimestamp = (time) => {
-  return format(time, 'd MMM yyyy, hh:mm a', { locale: ru })
+  return format(time, 'd MMM yyyy, HH:mm', { locale: ru })
 }

@@ -4,7 +4,7 @@
       {{ message.content }}
       <Tooltip>
         <TooltipTrigger>
-          <span class="text-xs ml-1">{{ format(message.updated_at, 'h:mm a') }}</span>
+          <span class="text-xs ml-1">{{ format(message.updated_at, 'HH:mm') }}</span>
         </TooltipTrigger>
         <TooltipContent>
           <p>

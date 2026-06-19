@@ -23,7 +23,7 @@
                   name: 'inbox-conversation',
                   params: {
                     uuid: type === 'conversations' ? item.uuid : item.conversation_uuid,
-                    type: 'assigned'
+                    type: 'all'
                   }
                 }"
                 class="block"

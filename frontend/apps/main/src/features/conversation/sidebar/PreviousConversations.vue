@@ -16,7 +16,7 @@
         name: 'inbox-conversation',
         params: {
           uuid: conversation.uuid,
-          type: 'assigned'
+          type: 'all'
         }
       }"
       class="block p-2 rounded hover:bg-muted"
