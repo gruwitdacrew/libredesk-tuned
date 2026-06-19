@@ -11,28 +11,8 @@
 
     <!-- Filters (hidden when bulk selecting) -->
     <div v-else class="p-2 flex justify-between items-center">
-      <!-- Status dropdown-menu, shown only on the "All" tab; preset tabs define their own status. -->
-      <DropdownMenu v-if="!route.params.viewID && route.params.type === 'all'">
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" class="w-30">
-            <div>
-              <span class="mr-1">{{ conversationStore.conversations.total }}</span>
-              <span>{{ conversationStore.getListStatus }}</span>
-            </div>
-            <ChevronDown class="w-4 h-4 ml-2 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem
-            v-for="status in conversationStore.statusOptions"
-            :key="status.value"
-            @click="handleStatusChange(status)"
-          >
-            {{ status.label }}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <div v-else>
+      <!-- Счётчик диалогов. Фильтр по статусу убран — статусы заданы вкладками инбокса. -->
+      <div>
         <Button variant="ghost" class="w-30">
           <span>{{ conversationStore.conversations.total }}</span>
         </Button>
@@ -183,10 +163,6 @@ const title = computed(() => {
   if (!key) return ''
   return t(key, route.meta?.titleCount || 1)
 })
-
-const handleStatusChange = (status) => {
-  conversationStore.setListStatus(status.label)
-}
 
 const handleSortChange = (order) => {
   conversationStore.setListSortField(order)
