@@ -200,9 +200,9 @@
   padding: 8px 14px;
   border: 1px solid transparent;
   border-radius: 16px;
-  background: var(--cw-white);
+  background: var(--cw-primary);
   box-shadow: var(--cw-shadow);
-  color: var(--cw-primary);
+  color: var(--cw-white);
   font-family: inherit;
   font-size: 0.875rem;
   cursor: pointer;
@@ -285,6 +285,7 @@
 }
 
 .csat-reason-btns__btn.is-selected {
-  background: var(--cw-secondary);
+  background: var(--cw-primary);
+  color: var(--cw-white);
   border-color: var(--cw-primary);
 }
