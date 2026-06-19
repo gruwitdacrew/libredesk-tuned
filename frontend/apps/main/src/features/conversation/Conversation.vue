@@ -18,10 +18,10 @@
       </div>
       <div>
         <DropdownMenu>
-          <DropdownMenuTrigger :disabled="isStatusDisabled()">
+          <DropdownMenuTrigger :disabled="!isActiveChannelConversation">
             <div
               class="flex items-center space-x-1 bg-primary px-2 py-1 rounded text-sm"
-              :class="isStatusDisabled() ? 'cursor-default' : 'cursor-pointer'"
+              :class="isActiveChannelConversation ? 'cursor-pointer' : 'cursor-default'"
               v-if="!conversationStore.conversation.loading"
             >
               <span class="text-secondary font-medium inline-block">
@@ -46,14 +46,15 @@
     <!-- Messages & reply box -->
     <div class="flex flex-col flex-grow overflow-hidden">
       <MessageList class="flex-1 overflow-y-auto" />
-      <!-- Поле ввода доступно только в открытом диалоге. -->
-      <ReplyBox v-if="conversationStore.current?.status === CONVERSATION_DEFAULT_STATUSES.OPEN" />
+      <!-- Поле ввода доступно только в «Активных (каналы связи)»: открытый диалог не из чат-бота. -->
+      <ReplyBox v-if="isActiveChannelConversation" />
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 //@ts-nocheck
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMediaQuery } from '@vueuse/core'
 import { ChevronLeft } from 'lucide-vue-next'
@@ -77,14 +78,12 @@ const isMobile = useMediaQuery('(max-width: 768px)')
 const conversationStore = useConversationStore()
 const emitter = useEmitter()
 
-// Тег статуса кликабелен только во вкладке «Активные (мессенджеры)»:
-// тех. статус «Открыт» и источник — не виджет (inbox_channel !== 'livechat').
-function isStatusDisabled() {
+// «Активный (каналы связи)»: открытый диалог не из чат-бота (виджета).
+// Только в этом состоянии доступны смена статуса и ответ.
+const isActiveChannelConversation = computed(() => {
   const conv = conversationStore.current
-  const isOpen = conv?.status === CONVERSATION_DEFAULT_STATUSES.OPEN
-  const isChannel = conv?.inbox_channel !== 'livechat'
-  return !(isOpen && isChannel)
-}
+  return conv?.status === CONVERSATION_DEFAULT_STATUSES.OPEN && conv?.inbox_channel !== 'livechat'
+})
 
 // Из тега активного диалога можно перевести только в «Открыт» или «Обработан».
 const STATUS_ACTIONS = [CONVERSATION_DEFAULT_STATUSES.OPEN, CONVERSATION_DEFAULT_STATUSES.RESOLVED]

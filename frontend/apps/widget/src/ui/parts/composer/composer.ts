@@ -48,14 +48,14 @@ export const createComposer = (
           messages: [
             ...s.messages,
             {
-              id: crypto?.randomUUID() ?? 'error',
+              id: 'error-user',
               content: DOMPurify.sanitize(text, { ALLOWED_TAGS: ['p'] }),
               type: 'plain',
               author: 'user',
               timestamp: Date.now()
             },
             {
-              id: crypto?.randomUUID() ?? 'error-message',
+              id: 'error-message',
               content: 'Введите корректные контактные данные',
               type: 'plain',
               author: 'bot',
@@ -118,11 +118,13 @@ export const createComposer = (
     const s = ctx.store.getStore()
     const completed = s.botStatus === 'escalated' && s.escalation2State === null
     const selectingChannel = s.escalation2State === 'select_channel'
+    // Вся вторая эскалация: выбор канала + ввод контактов (escalation2State — канал).
+    const inEscalation2 = s.escalation2State !== null
 
     composer.classList.toggle('is-hidden', completed)
     counter.classList.toggle('is-hidden', completed)
     doneText.classList.toggle('is-hidden', !completed)
-    restartBtn.classList.toggle('is-hidden', !(completed || selectingChannel))
+    restartBtn.classList.toggle('is-hidden', !(completed || inEscalation2))
     restartBtn.classList.toggle('composer__restart--top', selectingChannel)
 
     const channel = s.escalation2State
