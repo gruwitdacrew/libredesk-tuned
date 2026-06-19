@@ -20,7 +20,8 @@
         <DropdownMenu>
           <DropdownMenuTrigger :disabled="isStatusDisabled()">
             <div
-              class="flex items-center space-x-1 cursor-pointer bg-primary px-2 py-1 rounded text-sm"
+              class="flex items-center space-x-1 bg-primary px-2 py-1 rounded text-sm"
+              :class="isStatusDisabled() ? 'cursor-default' : 'cursor-pointer'"
               v-if="!conversationStore.conversation.loading"
             >
               <span class="text-secondary font-medium inline-block">
@@ -31,7 +32,7 @@
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
-              v-for="status in filterConversationOptions(conversationStore.statusOptions)"
+              v-for="status in statusActionOptions()"
               :key="status.value"
               @click="handleUpdateStatus(status.label)"
             >
@@ -76,17 +77,22 @@ const isMobile = useMediaQuery('(max-width: 768px)')
 const conversationStore = useConversationStore()
 const emitter = useEmitter()
 
+// Тег статуса кликабелен только во вкладке «Активные (мессенджеры)»:
+// тех. статус «Открыт» и источник — не виджет (inbox_channel !== 'livechat').
 function isStatusDisabled() {
-  if (
-    conversationStore.current &&
-    conversationStore.current?.status! == CONVERSATION_DEFAULT_STATUSES.OPEN
-  ) {
-    return false
-  } else return true
+  const conv = conversationStore.current
+  const isOpen = conv?.status === CONVERSATION_DEFAULT_STATUSES.OPEN
+  const isChannel = conv?.inbox_channel !== 'livechat'
+  return !(isOpen && isChannel)
 }
 
-function filterConversationOptions() {
-  return conversationStore.statusOptionsNoSnooze
+// Из тега активного диалога можно перевести только в «Открыт» или «Обработан».
+const STATUS_ACTIONS = [CONVERSATION_DEFAULT_STATUSES.OPEN, CONVERSATION_DEFAULT_STATUSES.RESOLVED]
+
+function statusActionOptions() {
+  return STATUS_ACTIONS.map((label) =>
+    conversationStore.statusOptions.find((s) => s.label === label)
+  ).filter(Boolean)
 }
 
 const goBack = () => {
