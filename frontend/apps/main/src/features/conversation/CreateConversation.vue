@@ -71,39 +71,9 @@
                   </FormItem>
                 </FormField>
 
-                <!-- Name Group -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField v-slot="{ componentField }" name="first_name">
-                    <FormItem>
-                      <FormLabel>{{ $t('globals.terms.firstName') }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder=""
-                          v-bind="componentField"
-                          :disabled="!!selectedContact"
-                          required
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-
-                  <FormField v-slot="{ componentField }" name="last_name">
-                    <FormItem>
-                      <FormLabel>{{ $t('globals.terms.lastName') }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder=""
-                          v-bind="componentField"
-                          :disabled="!!selectedContact"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </div>
+                <!-- Поля "Имя"/"Фамилия" скрыты: контакты анонимные.
+                     Значения по-прежнему подставляются из выбранного контакта
+                     (см. selectContact) и уходят в форму скрыто. -->
 
                 <!-- Subject and Inbox Group -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -283,7 +253,7 @@ const formSchema = z.object({
   subject: z.string().min(1, t('validation.subjectCannotBeEmpty')),
   content: z.string().min(1, t('validation.messageCannotBeEmpty')),
   contact_email: z.string().email(t('validation.invalidEmail')),
-  first_name: z.string().min(1, t('globals.messages.required')),
+  first_name: z.string().optional(),
   last_name: z.string().optional()
 })
 
@@ -408,6 +378,11 @@ const createConversation = form.handleSubmit(async (values) => {
     values.inbox_id = Number(values.inbox_id)
     values.team_id = values.team_id ? Number(values.team_id) : null
     values.agent_id = values.agent_id ? Number(values.agent_id) : null
+    // Контакты анонимные: поля "Имя"/"Фамилия" скрыты. Если имя не подставилось
+    // из выбранного контакта, берём локальную часть email — бэкенд требует first_name.
+    if (!values.first_name) {
+      values.first_name = values.contact_email.split('@')[0] || values.contact_email
+    }
     // Array of attachment ids.
     values.attachments = mediaFiles.value.map((file) => file.id)
     // Initiator of this conversation is always agent
