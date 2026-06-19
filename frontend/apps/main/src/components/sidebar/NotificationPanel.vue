@@ -181,7 +181,7 @@ const handleNotificationClick = async (notification) => {
     router.push({
       name: 'inbox-conversation',
       params: {
-        type: notification.notification_type === 'mention' ? 'mentioned' : 'assigned',
+        type: 'all',
         uuid: notification.conversation_uuid
       },
       query: notification.message_uuid ? { scrollTo: notification.message_uuid } : {}
