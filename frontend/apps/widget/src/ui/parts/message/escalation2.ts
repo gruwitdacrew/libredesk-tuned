@@ -26,6 +26,7 @@ export const buildEscalation2Btns = (
 
   for (const channel of CHANNEL_ORDER) {
     const meta = CHANNELS[channel]
+
     const button = iconLabelButton({
       className: `escalation-btns__btn escalation-btns__btn--${meta.mod}`,
       icon: meta.icon,
