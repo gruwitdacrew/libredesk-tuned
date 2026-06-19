@@ -1,30 +1,11 @@
 <template>
   <!-- Set fixed width only when not in fullscreen. -->
   <div class="flex flex-col h-full" :class="{ 'max-h-[600px]': !isFullscreen }">
-    <!-- Message type toggle -->
+    <!-- Табы типа сообщения убраны; остаётся только разворот редактора на весь экран. -->
     <div
-      class="flex justify-between items-center"
+      class="flex justify-end items-center"
       :class="{ 'mb-4': !isFullscreen, 'border-b border-border pb-4': isFullscreen }"
     >
-      <Tabs v-model="messageType" class="rounded border">
-        <TabsList class="bg-muted p-1 rounded">
-          <TabsTrigger
-            value="reply"
-            class="px-3 py-1 rounded transition-colors duration-200"
-            :class="{ 'bg-background text-foreground': messageType === 'reply' }"
-          >
-            {{ $t('globals.terms.reply') }}
-          </TabsTrigger>
-          <TabsTrigger
-            value="private_note"
-            v-if="false"
-            class="px-3 py-1 rounded transition-colors duration-200"
-            :class="{ 'bg-background text-foreground': messageType === 'private_note' }"
-          >
-            {{ $t('globals.terms.privateNote') }}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
       <Button class="text-muted-foreground" variant="ghost" @click="toggleFullscreen">
         <component :is="isFullscreen ? Minimize2 : Maximize2" />
       </Button>
@@ -146,7 +127,6 @@ import { hasInlineImage, hasPendingInlineUpload } from '@main/composables/useInl
 import { useConversationStore } from '@main/stores/conversation'
 import { Input } from '@shared-ui/components/ui/input'
 import { Button } from '@shared-ui/components/ui/button'
-import { Tabs, TabsList, TabsTrigger } from '@shared-ui/components/ui/tabs'
 import { useEmitter } from '@main/composables/useEmitter'
 import ReplyBoxAttachmentPreview from '@/features/conversation/message/attachment/ReplyBoxAttachmentPreview.vue'
 import MacroActionsPreview from '@/features/conversation/MacroActionsPreview.vue'
