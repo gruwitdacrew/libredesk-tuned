@@ -71,40 +71,6 @@
                   </FormItem>
                 </FormField>
 
-                <!-- Name Group -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <FormField v-slot="{ componentField }" name="first_name">
-                    <FormItem>
-                      <FormLabel>{{ $t('globals.terms.firstName') }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder=""
-                          v-bind="componentField"
-                          :disabled="!!selectedContact"
-                          required
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-
-                  <FormField v-slot="{ componentField }" name="last_name">
-                    <FormItem>
-                      <FormLabel>{{ $t('globals.terms.lastName') }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          placeholder=""
-                          v-bind="componentField"
-                          :disabled="!!selectedContact"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </div>
-
                 <!-- Subject and Inbox Group -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <FormField v-slot="{ componentField }" name="subject">
@@ -280,11 +246,9 @@ const isDisabled = computed(() => {
 })
 
 const formSchema = z.object({
-  subject: z.string().min(1, t('validation.subjectCannotBeEmpty')),
+  subject: z.string().optional(),
   content: z.string().min(1, t('validation.messageCannotBeEmpty')),
-  contact_email: z.string().email(t('validation.invalidEmail')),
-  first_name: z.string().min(1, t('globals.messages.required')),
-  last_name: z.string().optional()
+  contact_email: z.string().email(t('validation.invalidEmail'))
 })
 
 watch(dialogOpen, async (isOpen) => {
@@ -335,8 +299,6 @@ const form = useForm({
     subject: '',
     content: '',
     contact_email: '',
-    first_name: '',
-    last_name: ''
   }
 })
 

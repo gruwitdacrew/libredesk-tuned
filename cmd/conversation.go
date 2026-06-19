@@ -11,6 +11,7 @@ import (
 	"github.com/abhinavxd/libredesk/internal/automation/models"
 	cmodels "github.com/abhinavxd/libredesk/internal/conversation/models"
 	"github.com/abhinavxd/libredesk/internal/envelope"
+	imodels "github.com/abhinavxd/libredesk/internal/inbox/models"
 	"github.com/abhinavxd/libredesk/internal/stringutil"
 	umodels "github.com/abhinavxd/libredesk/internal/user/models"
 	vmodels "github.com/abhinavxd/libredesk/internal/view/models"
@@ -773,7 +774,8 @@ func handleCreateConversation(r *fastglue.Request) error {
 	}
 
 	// Validate the request
-	if err := validateCreateConversationRequest(req, app); err != nil {
+	inboxID, err := validateCreateConversationRequest(req, app)
+	if err != nil {
 		return sendErrorEnvelope(r, err)
 	}
 
@@ -782,22 +784,32 @@ func handleCreateConversation(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 
-	// Find or create contact.
-	contact := umodels.User{
+	visitor := umodels.User{
 		Email:            null.StringFrom(req.Email),
-		FirstName:        req.FirstName,
-		LastName:         req.LastName,
-		ExternalUserID:   null.NewString(req.ExternalUserID, req.ExternalUserID != ""),
+		FirstName:        "Пользователь",
 		CustomAttributes: json.RawMessage(`{}`),
 	}
-	if err := app.user.CreateContact(&contact); err != nil {
-		return sendErrorEnvelope(r, envelope.NewError(envelope.GeneralError, app.i18n.T("globals.messages.somethingWentWrong"), nil))
+
+	if err := app.user.CreateVisitor(&visitor); err != nil {
+		return sendErrorEnvelope(r, err)
 	}
+
+	// // Find or create contact.
+	// contact := umodels.User{
+	// 	Email:            null.StringFrom(req.Email),
+	// 	FirstName:        req.FirstName,
+	// 	LastName:         req.LastName,
+	// 	ExternalUserID:   null.NewString(req.ExternalUserID, req.ExternalUserID != ""),
+	// 	CustomAttributes: json.RawMessage(`{}`),
+	// }
+	// if err := app.user.CreateContact(&contact); err != nil {
+	// 	return sendErrorEnvelope(r, envelope.NewError(envelope.GeneralError, app.i18n.T("globals.messages.somethingWentWrong"), nil))
+	// }
 
 	// Create conversation first.
 	conversationID, conversationUUID, err := app.conversation.CreateConversation(
-		contact.ID,
-		req.InboxID,
+		visitor.ID,
+		inboxID,
 		"",         /** last_message **/
 		time.Now(), /** last_message_at **/
 		req.Subject,
@@ -829,7 +841,7 @@ func handleCreateConversation(r *fastglue.Request) error {
 		}
 
 		// Queue reply.
-		if _, err := app.conversation.QueueReply(media, req.InboxID, auser.ID /**sender_id**/, contact.ID, &conversation, req.Content, map[string]any{} /**meta**/); err != nil {
+		if _, err := app.conversation.QueueReply(media, inboxID, auser.ID /**sender_id**/, visitor.ID, &conversation, req.Content, map[string]any{} /**meta**/); err != nil {
 			// Delete the conversation if msg queue fails.
 			if err := app.conversation.DeleteConversation(conversationUUID); err != nil {
 				app.lo.Error("error deleting conversation", "error", err)
@@ -838,7 +850,7 @@ func handleCreateConversation(r *fastglue.Request) error {
 		}
 	case umodels.UserTypeContact:
 		// Create contact message.
-		if _, err := app.conversation.CreateContactMessage(media, contact.ID, conversationUUID, req.Content, cmodels.ContentTypeHTML, true); err != nil {
+		if _, err := app.conversation.CreateContactMessage(media, visitor.ID, conversationUUID, req.Content, cmodels.ContentTypeHTML, true); err != nil {
 			// Delete the conversation if message creation fails.
 			if err := app.conversation.DeleteConversation(conversationUUID); err != nil {
 				app.lo.Error("error deleting conversation", "error", err)
@@ -863,43 +875,50 @@ func handleCreateConversation(r *fastglue.Request) error {
 }
 
 // validateCreateConversationRequest validates the create conversation request fields.
-func validateCreateConversationRequest(req createConversationRequest, app *App) error {
-	if req.InboxID <= 0 {
-		return envelope.NewError(envelope.InputError, app.i18n.Ts("globals.messages.required", "name", "`inbox_id`"), nil)
-	}
+func validateCreateConversationRequest(req createConversationRequest, app *App) (int, error) {
 	if req.Content == "" {
-		return envelope.NewError(envelope.InputError, app.i18n.Ts("globals.messages.required", "name", "`content`"), nil)
+		return 0, envelope.NewError(envelope.InputError, app.i18n.Ts("globals.messages.required", "name", "`content`"), nil)
 	}
 	if req.Email == "" {
-		return envelope.NewError(envelope.InputError, app.i18n.Ts("globals.messages.required", "name", "`contact_email`"), nil)
-	}
-	if req.FirstName == "" {
-		return envelope.NewError(envelope.InputError, app.i18n.Ts("globals.messages.required", "name", "`first_name`"), nil)
+		return 0, envelope.NewError(envelope.InputError, app.i18n.Ts("globals.messages.required", "name", "`contact_email`"), nil)
 	}
 	if !stringutil.ValidEmail(req.Email) {
-		return envelope.NewError(envelope.InputError, app.i18n.T("validation.invalidEmail"), nil)
+		return 0, envelope.NewError(envelope.InputError, app.i18n.T("validation.invalidEmail"), nil)
 	}
 	if req.Initiator != umodels.UserTypeContact && req.Initiator != umodels.UserTypeAgent {
-		return envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.somethingWentWrong"), nil)
+		return 0, envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.somethingWentWrong"), nil)
 	}
 
-	// Check if inbox exists and is enabled.
-	inbox, err := app.inbox.GetDBRecord(req.InboxID)
-	if err != nil {
-		return err
-	}
-	if !inbox.Enabled {
-		return envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.disabled"), nil)
-	}
-	if inbox.Channel != "email" {
-		return envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.somethingWentWrong"), nil)
+	var inbox imodels.Inbox
+	if req.InboxID <= 0 {
+		emailInboxes, err := app.inbox.GetByChannel("email")
+		if err != nil {
+			return 0, err
+		}
+
+		inbox = emailInboxes[0]
+		if !emailInboxes[0].Enabled {
+			return 0, envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.disabled"), nil)
+		}
+	} else {
+		// Check if inbox exists and is enabled.
+		inbox, err := app.inbox.GetDBRecord(req.InboxID)
+		if err != nil {
+			return 0, err
+		}
+		if !inbox.Enabled {
+			return 0, envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.disabled"), nil)
+		}
+		if inbox.Channel != "email" {
+			return 0, envelope.NewError(envelope.InputError, app.i18n.T("globals.messages.somethingWentWrong"), nil)
+		}
 	}
 
 	// Validate custom attribute keys. Skip unknown keys.
 	if len(req.CustomAttributes) > 0 {
 		attrs, err := app.customAttribute.GetAll("conversation")
 		if err != nil {
-			return err
+			return 0, err
 		}
 		validKeys := make(map[string]struct{}, len(attrs))
 		for _, a := range attrs {
@@ -912,5 +931,5 @@ func validateCreateConversationRequest(req createConversationRequest, app *App) 
 		}
 	}
 
-	return nil
+	return inbox.ID, nil
 }

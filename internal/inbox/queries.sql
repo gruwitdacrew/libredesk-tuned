@@ -16,6 +16,9 @@ SELECT id, uuid, created_at, updated_at, "name", deleted_at, channel, enabled, c
 -- name: get-inbox-by-uuid
 SELECT id, uuid, created_at, updated_at, "name", deleted_at, channel, enabled, csat_enabled, prompt_tags_on_reply, config, "from", secret, linked_email_inbox_id FROM inboxes where uuid = $1 and deleted_at is NULL;
 
+-- name: get-inboxes-by-channel
+SELECT id, uuid, created_at, updated_at, "name", deleted_at, channel, enabled, csat_enabled, prompt_tags_on_reply, config, "from", linked_email_inbox_id FROM inboxes where channel = $1 and deleted_at is NULL;
+
 -- name: update
 UPDATE inboxes
 set channel = $2, config = $3, "name" = $4, "from" = $5, csat_enabled = $6, prompt_tags_on_reply = $7, enabled = $8, secret = $9, linked_email_inbox_id = $10, updated_at = now()

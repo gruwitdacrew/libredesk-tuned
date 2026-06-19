@@ -109,6 +109,7 @@ type Manager struct {
 type queries struct {
 	GetInbox       *sqlx.Stmt `query:"get-inbox"`
 	GetInboxByUUID *sqlx.Stmt `query:"get-inbox-by-uuid"`
+	GetByChannel   *sqlx.Stmt `query:"get-inboxes-by-channel"`
 	GetActive      *sqlx.Stmt `query:"get-active-inboxes"`
 	GetAll         *sqlx.Stmt `query:"get-all-inboxes"`
 	Update         *sqlx.Stmt `query:"update"`
@@ -162,6 +163,30 @@ func (m *Manager) Get(id int) (Inbox, error) {
 		return nil, ErrInboxNotFound
 	}
 	return i, nil
+}
+
+// GetByChannel retrieves inboxes by channel.
+func (m *Manager) GetByChannel(channel string) ([]imodels.Inbox, error) {
+	var inboxes []imodels.Inbox
+	if err := m.queries.GetByChannel.Select(&inboxes, channel); err != nil {
+		m.lo.Error("fetching inboxes by channel", "error", err)
+		return nil, err
+	}
+
+	// Decrypt sensitive fields in each inbox config
+	for i := range inboxes {
+		decryptedConfig, err := m.decryptInboxConfig(inboxes[i].Config)
+		if err != nil {
+			m.lo.Error("error decrypting inbox config", "id", inboxes[i].ID, "error", err)
+			return nil, fmt.Errorf("decrypting inbox config for ID %d: %w", inboxes[i].ID, err)
+		}
+		inboxes[i].Config = decryptedConfig
+
+		// Decrypt secret field
+		m.decryptInboxSecret(&inboxes[i])
+	}
+
+	return inboxes, nil
 }
 
 // GetDBRecord returns the inbox record from the DB by numeric ID or UUID.
