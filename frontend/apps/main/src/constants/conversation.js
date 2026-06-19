@@ -35,7 +35,7 @@ export const INBOX_TABS = [
   },
   {
     key: 'active-channel',
-    label: 'Активные (каналы связи)',
+    label: 'Активные (мессенджеры)',
     icon: 'Mail',
     status: CONVERSATION_DEFAULT_STATUSES.OPEN,
     source: INBOX_SOURCE.CHANNEL
@@ -63,7 +63,7 @@ export const INBOX_TABS = [
   },
   {
     key: 'processed',
-    label: 'Обработанные',
+    label: 'Отработанные',
     icon: 'BadgeCheck',
     status: CONVERSATION_DEFAULT_STATUSES.HANDLED,
     source: null
