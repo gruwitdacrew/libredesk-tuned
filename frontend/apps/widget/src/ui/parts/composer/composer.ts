@@ -48,14 +48,14 @@ export const createComposer = (
           messages: [
             ...s.messages,
             {
-              id: crypto.randomUUID(),
+              id: crypto?.randomUUID() ?? 'error',
               content: DOMPurify.sanitize(text, { ALLOWED_TAGS: ['p'] }),
               type: 'plain',
               author: 'user',
               timestamp: Date.now()
             },
             {
-              id: crypto.randomUUID(),
+              id: crypto?.randomUUID() ?? 'error-message',
               content: 'Введите корректные контактные данные',
               type: 'plain',
               author: 'bot',
