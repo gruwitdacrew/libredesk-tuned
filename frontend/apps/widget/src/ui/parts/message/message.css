@@ -200,9 +200,9 @@
   padding: 8px 14px;
   border: 1px solid transparent;
   border-radius: 16px;
-  background: var(--cw-primary);
+  background: var(--cw-white);
   box-shadow: var(--cw-shadow);
-  color: var(--cw-white);
+  color: var(--cw-primary);
   font-family: inherit;
   font-size: 0.875rem;
   cursor: pointer;
@@ -216,6 +216,7 @@
 .csat-rating-btns__btn:hover:not(:disabled),
 .csat-reason-btns__btn:hover:not(:disabled) {
   background-color: var(--cw-secondary);
+  color: var(--cw-primary);
   border-color: var(--cw-primary);
 }
 
