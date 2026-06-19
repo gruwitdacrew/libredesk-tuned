@@ -290,3 +290,8 @@
   color: var(--cw-white);
   border-color: var(--cw-primary);
 }
+
+.csat-reason-btns__btn.is-disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
