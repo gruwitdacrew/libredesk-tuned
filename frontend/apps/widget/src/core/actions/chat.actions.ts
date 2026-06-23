@@ -10,6 +10,7 @@ import { mapMessage, resolveType, sortByTime } from './message.mapper';
 export interface ChatActions {
 	sendMessage: (text: string) => Promise<void>;
 	receiveMessage: (msg: LibredeskMessage) => void;
+	resyncActiveConversation: () => Promise<void>;
 	setBotTyping: (isTyping: boolean) => void;
 	setBotThinking: (isThinking: boolean) => void;
 	setBotLongThinking: (isThinking: boolean) => void;
@@ -107,16 +108,43 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 		}
 
 		const type = resolveType(msg);
-		patch((s) => ({
-			botStatus: s.botStatus === 'escalated' ? 'escalated' : 'online',
-			isAwaitingReply: false,
-			// Повторный escalation_2 не должен затирать уже выбранный канал.
-			escalation2State:
-				type === 'escalation_2' && !isChannel(s.escalation2State)
-					? 'select_channel'
-					: s.escalation2State,
-			messages: [...s.messages, mapMessage(msg)],
-		}));
+		patch((s) => {
+			if (s.messages.some((m) => m.id === msg.uuid)) {
+				return {};
+			}
+			return {
+				botStatus: s.botStatus === 'escalated' ? 'escalated' : 'online',
+				isAwaitingReply: false,
+				// Повторный escalation_2 не должен затирать уже выбранный канал.
+				escalation2State:
+					type === 'escalation_2' && !isChannel(s.escalation2State)
+						? 'select_channel'
+						: s.escalation2State,
+				messages: [...s.messages, mapMessage(msg)],
+			};
+		});
+	};
+
+	/** Досинхронизирует активный диалог после join: добирает из БД сообщения, потерянные до подключения WS. */
+	const resyncActiveConversation = async (): Promise<void> => {
+		const { conversationUuid } = store.getStore();
+		if (conversationUuid === null) {
+			return;
+		}
+		try {
+			const { conversation, messages } = await api.getConversation(conversationUuid);
+			const ordered = [...messages].sort(
+				(a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+			);
+			for (const msg of ordered) {
+				receiveMessage(msg);
+			}
+			if (isEscalatedStatus(conversation.status) || isClosedStatus(conversation.status)) {
+				setBotEscalated(true);
+			}
+		} catch (err) {
+			console.error('[Chat] resync failed:', err);
+		}
 	};
 
 	/** Выбор/смена канала только меняет состояние: подсказка обновляется в пузыре escalation_2 на месте, новое сообщение не добавляется. */
@@ -265,6 +293,7 @@ export const createChatActions = (store: Store<WidgetStore>, api: LibredeskApi):
 	return {
 		sendMessage,
 		receiveMessage,
+		resyncActiveConversation,
 		setBotTyping,
 		setBotThinking,
 		setBotLongThinking,
