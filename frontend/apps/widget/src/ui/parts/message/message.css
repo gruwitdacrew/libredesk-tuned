@@ -259,6 +259,7 @@
 .csat-rating-btns__btn.is-selected {
   background: var(--cw-primary);
   color: var(--cw-white);
+  opacity: 0.6;
 }
 
 .csat-rating-btns__btn.is-disabled {
@@ -289,6 +290,13 @@
   background: var(--cw-primary);
   color: var(--cw-white);
   border-color: var(--cw-primary);
+  opacity: 0.5;
+}
+
+/* После отправки причины выбранная кнопка остаётся подсвеченной, но гаснет — выбор закрыт. */
+.csat-reason-btns__btn.is-selected:disabled {
+  opacity: 0.5;
+  box-shadow: none;
 }
 
 .csat-reason-btns__btn.is-disabled {
