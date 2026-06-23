@@ -41,7 +41,7 @@ export const CHANNELS: Record<Channel, ChannelMeta> = {
     label: 'MAX',
     mod: '1984',
     prefix: CHANNEL_PREFIXES.max,
-    placeholder: 'Введите ваш никнейм в MAX',
+    placeholder: 'Введите ваш номер телефона',
     prompt:
       'Укажите ваш номер телефона в формате +7 999 123-45-67\n\nАлександра свяжется с вами в MAX',
     toHref: (raw) => (raw.length > 0 ? raw : null)

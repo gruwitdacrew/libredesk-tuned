@@ -49,15 +49,16 @@ export const wirePanelVisibility = (
 /**
  * Переключает классы раскладки эскалации на панели. Делается здесь, где доступен
  * panel, чтобы класс применился и при первом рендере — включая перезагрузку
- * сразу в состоянии эскалации. `panel--channel-select` резервирует место под
- * кнопку перезапуска над композером (см. .panel--channel-select в messageList.css).
+ * сразу в состоянии эскалации. `panel--escalation-restart` резервирует место под
+ * кнопку перезапуска над композером (см. .panel--escalation-restart в messageList.css).
  */
 export const wireEscalationLayout = (ctx: WidgetContext, panel: HTMLElement): void => {
 	const sync = (): void => {
 		const s = ctx.store.getStore();
 		const escalating = s.botStatus === 'escalated' || s.escalation2State !== null;
 		panel.classList.toggle('panel--escalation', escalating);
-		panel.classList.toggle('panel--channel-select', s.escalation2State === 'select_channel');
+		// Вся вторая эскалация показывает кнопку перезапуска над композером — резервируем её высоту.
+		panel.classList.toggle('panel--escalation-restart', s.escalation2State !== null);
 	};
 	sync();
 	ctx.onDestroy(ctx.store.subscribe((s) => s.botStatus, sync));

@@ -125,7 +125,8 @@ export const createComposer = (
     counter.classList.toggle('is-hidden', completed)
     doneText.classList.toggle('is-hidden', !completed)
     restartBtn.classList.toggle('is-hidden', !(completed || inEscalation2))
-    restartBtn.classList.toggle('composer__restart--top', selectingChannel)
+    // Всю вторую эскалацию (выбор канала + ввод контактов) держим кнопку над полем ввода.
+    restartBtn.classList.toggle('composer__restart--top', inEscalation2)
 
     const channel = s.escalation2State
     const isSelectChannel = s.botStatus === 'escalated' && selectingChannel
