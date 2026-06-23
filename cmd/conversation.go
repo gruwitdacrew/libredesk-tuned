@@ -784,31 +784,31 @@ func handleCreateConversation(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 
-	visitor := umodels.User{
-		Email:            null.StringFrom(req.Email),
-		FirstName:        "Пользователь",
-		CustomAttributes: json.RawMessage(`{}`),
-	}
-
-	if err := app.user.CreateVisitor(&visitor); err != nil {
-		return sendErrorEnvelope(r, err)
-	}
-
-	// // Find or create contact.
-	// contact := umodels.User{
+	// // Create visitor.
+	// visitor := umodels.User{
 	// 	Email:            null.StringFrom(req.Email),
-	// 	FirstName:        req.FirstName,
-	// 	LastName:         req.LastName,
-	// 	ExternalUserID:   null.NewString(req.ExternalUserID, req.ExternalUserID != ""),
+	// 	FirstName:        "Пользователь",
 	// 	CustomAttributes: json.RawMessage(`{}`),
 	// }
-	// if err := app.user.CreateContact(&contact); err != nil {
-	// 	return sendErrorEnvelope(r, envelope.NewError(envelope.GeneralError, app.i18n.T("globals.messages.somethingWentWrong"), nil))
+
+	// if err := app.user.CreateVisitor(&visitor); err != nil {
+	// 	return sendErrorEnvelope(r, err)
 	// }
+
+	// Find or create contact.
+	contact := umodels.User{
+		Email:            null.StringFrom(req.Email),
+		FirstName:        req.Email,
+		ExternalUserID:   null.NewString(req.ExternalUserID, req.ExternalUserID != ""),
+		CustomAttributes: json.RawMessage(`{}`),
+	}
+	if err := app.user.CreateContact(&contact); err != nil {
+		return sendErrorEnvelope(r, envelope.NewError(envelope.GeneralError, app.i18n.T("globals.messages.somethingWentWrong"), nil))
+	}
 
 	// Create conversation first.
 	conversationID, conversationUUID, err := app.conversation.CreateConversation(
-		visitor.ID,
+		contact.ID,
 		inboxID,
 		"",         /** last_message **/
 		time.Now(), /** last_message_at **/
@@ -841,7 +841,7 @@ func handleCreateConversation(r *fastglue.Request) error {
 		}
 
 		// Queue reply.
-		if _, err := app.conversation.QueueReply(media, inboxID, auser.ID /**sender_id**/, visitor.ID, &conversation, req.Content, map[string]any{} /**meta**/); err != nil {
+		if _, err := app.conversation.QueueReply(media, inboxID, auser.ID /**sender_id**/, contact.ID, &conversation, req.Content, map[string]any{} /**meta**/); err != nil {
 			// Delete the conversation if msg queue fails.
 			if err := app.conversation.DeleteConversation(conversationUUID); err != nil {
 				app.lo.Error("error deleting conversation", "error", err)
@@ -850,7 +850,7 @@ func handleCreateConversation(r *fastglue.Request) error {
 		}
 	case umodels.UserTypeContact:
 		// Create contact message.
-		if _, err := app.conversation.CreateContactMessage(media, visitor.ID, conversationUUID, req.Content, cmodels.ContentTypeHTML, true); err != nil {
+		if _, err := app.conversation.CreateContactMessage(media, contact.ID, conversationUUID, req.Content, cmodels.ContentTypeHTML, true); err != nil {
 			// Delete the conversation if message creation fails.
 			if err := app.conversation.DeleteConversation(conversationUUID); err != nil {
 				app.lo.Error("error deleting conversation", "error", err)
