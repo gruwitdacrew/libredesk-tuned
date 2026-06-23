@@ -37,6 +37,9 @@ export const createChatRuntime = (ctx: WidgetContext, config: LibredeskConfig): 
 		onClosed: () => {
 			chatActions.setBotEscalated(true);
 		},
+		onReady: () => {
+			void chatActions.resyncActiveConversation();
+		},
 	});
 
 	ctx.onDestroy(

@@ -10,10 +10,12 @@ export interface WsHandlers {
 	onError: (conversationUuid: string, isError: boolean) => void;
 	onEscalated: (conversationUuid: string) => void;
 	onClosed: (conversationUuid: string) => void;
+	onReady: () => void;
 }
 
 const WS_EVENT = {
 	JOIN: 'join',
+	JOINED: 'joined',
 	NEW_MESSAGE: 'new_message',
 	TYPING: 'typing',
 	ERROR: 'error',
@@ -106,6 +108,9 @@ export const createLibredeskWs = (config: LibredeskConfig, handlers: WsHandlers)
 			switch (data.type) {
 				case WS_EVENT.PONG:
 					lastPong = Date.now();
+					break;
+				case WS_EVENT.JOINED:
+					handlers.onReady();
 					break;
 				case WS_EVENT.NEW_MESSAGE:
 					if (data.data !== undefined) {
