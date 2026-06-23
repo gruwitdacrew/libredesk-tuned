@@ -201,6 +201,7 @@ type Conversation struct {
 	NextResponseMetAt         null.Time              `db:"next_response_met_at" json:"next_response_met_at"`
 	LastContinuityEmailSentAt null.Time              `db:"last_continuity_email_sent_at" json:"-"`
 	PreviousConversations     []PreviousConversation `db:"-" json:"previous_conversations"`
+	ShouldSendCSAT            bool                   `db:"should_send_csat" json:"should_send_csat"`
 }
 
 type ConversationContact struct {

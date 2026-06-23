@@ -301,6 +301,7 @@ type queries struct {
 	UnsnoozeAll                        *sqlx.Stmt `query:"unsnooze-all"`
 	DeleteConversation                 *sqlx.Stmt `query:"delete-conversation"`
 	RemoveConversationAssignee         *sqlx.Stmt `query:"remove-conversation-assignee"`
+	UpdateConversationShouldSendCSAT   *sqlx.Stmt `query:"update-conversation-should-send-csat"`
 
 	// Draft queries.
 	UpsertConversationDraft *sqlx.Stmt `query:"upsert-conversation-draft"`
@@ -653,6 +654,15 @@ func (c *Manager) ActiveUserConversationsCount(userID int) (int, error) {
 		return count, envelope.NewError(envelope.GeneralError, c.i18n.T("globals.messages.somethingWentWrong"), nil)
 	}
 	return count, nil
+}
+
+// UpdateConversationShouldSendCSAT updates the last message details for a conversation.
+func (c *Manager) UpdateConversationShouldSendCSAT(conversationUUID string, shouldSendCSAT bool) error {
+	if _, err := c.q.UpdateConversationShouldSendCSAT.Exec(conversationUUID, shouldSendCSAT); err != nil {
+		c.lo.Error("error updating conversation should send csat", "error", err)
+		return err
+	}
+	return nil
 }
 
 // UpdateConversationLastMessage updates the last message details for a conversation.
@@ -1352,6 +1362,12 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 		// if msg_type != "msg_error" {
 		// 	m.aiCache.Set(question, aiReply)
 		// }
+
+		if msg_type == "msg_plain" || msg_type == "msg_fallback" || msg_type == "msg_thanks" {
+			m.UpdateConversationShouldSendCSAT(conv.UUID, true)
+		} else {
+			m.UpdateConversationShouldSendCSAT(conv.UUID, false)
+		}
 
 		if msg_type == "msg_escalation_1" {
 			err := m.UpdateConversationStatus(conv.UUID, 0, models.StatusEscalation, "", user)
