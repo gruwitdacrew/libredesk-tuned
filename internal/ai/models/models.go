@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Provider struct {
@@ -29,9 +27,8 @@ type Prompt struct {
 
 // AIRequest представляет запрос к ML-модели
 type AIRequest struct {
-	ID        uuid.UUID `json:"id,omitempty"`
-	Question  string    `json:"question"`
-	SessionID string    `json:"session_id"`
+	Question  string `json:"question"`
+	SessionID string `json:"session_id"`
 }
 
 // AIResponse представляет ответ от ML-модели

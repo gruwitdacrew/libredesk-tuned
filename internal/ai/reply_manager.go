@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/abhinavxd/libredesk/internal/ai/models"
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/zerodha/logf"
 )
@@ -46,82 +46,145 @@ func NewReplyManager(rd *redis.Client, workersCount int, aiEndpoint string, time
 	return q
 }
 
-// Process отправляет запрос и ждёт ответа в своём канале
 func (rm *ReplyManager) Process(req models.AIRequest) (*models.AIResponse, error) {
-	req.ID = uuid.New()
-	responseChannel := fmt.Sprintf("ai:response:%s", req.ID.String())
+	ctx := context.Background()
+	sessionKey := fmt.Sprintf("ai:session:%s", req.SessionID)
+	questionsKey := sessionKey + ":questions"
+	responseChannel := fmt.Sprintf("ai:response:%s", req.SessionID)
 
-	// Подписываемся на канал ответа
-	sub := rm.rd.Subscribe(context.Background(), responseChannel)
+	// Добавляем вопрос в список вопросов сессии и получаем количество вопросов в буфере
+	questionsCount, err := rm.rd.RPush(ctx, questionsKey, req.Question).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	// Пытаемся стать основным обрабатывающим потоком для беседы
+	locked, err := rm.rd.SetNX(ctx, sessionKey+":owner", "1", rm.timeout).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	if !locked {
+		// Кто-то уже стал таковым - он выполнит остальную работу
+		return nil, fmt.Errorf("request cancelled by extra flow")
+	}
+
+	// Проверяем, есть ли уже активная обработка запроса ядром
+	isProcessing, err := rm.rd.Get(ctx, sessionKey+":processing").Bool()
+	if err != nil && err != redis.Nil {
+		return nil, err
+	}
+
+	if isProcessing {
+		// Ждём ответ, чтобы он вернулся в другом потоке (в котором уже началась обработка ядром, так потоков максимум 2 на беседу)
+		rm.waitForResponse(ctx, responseChannel)
+	}
+
+	if questionsCount > 1 {
+		// Отменяем подписку в других потоках, если были вопросы в буфере, но не обработаны
+		rm.rd.Publish(ctx, responseChannel, "cancel")
+
+		// Удаляем старую задачу этой сессии из очереди
+		rm.rd.LRem(ctx, "ai:queue", 0, req.SessionID)
+	}
+
+	// Пушим задачу в начало и ждём ответ для возврата
+	rm.rd.LPush(ctx, "ai:queue", req.SessionID)
+
+	// Удаляем owner (чтобы следующая сессия могла начать)
+	rm.rd.Del(ctx, sessionKey+":owner")
+
+	return rm.waitForResponse(ctx, responseChannel)
+}
+
+func (rm *ReplyManager) waitForResponse(ctx context.Context, responseChannel string) (*models.AIResponse, error) {
+
+	sub := rm.rd.Subscribe(ctx, responseChannel)
 	defer sub.Close()
 
-	// Отправляем задачу в ОЧЕРЕДЬ (не PubSub)
-	data, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	// LPush + RPop = очередь FIFO
-	if err := rm.rd.LPush(context.Background(), "ai:queue", data).Err(); err != nil {
-		return nil, fmt.Errorf("failed to push request: %w", err)
-	}
-
-	// Ждём ответа
 	timer := time.NewTimer(rm.timeout)
 	defer timer.Stop()
 
 	for {
 		select {
 		case msg := <-sub.Channel():
+
+			rm.lo.Info("new message", "payload", msg)
+
+			if msg.Payload == "cancel" {
+				return nil, fmt.Errorf("request cancelled by newer request")
+			}
+
 			var resp models.AIResponse
 			if err := json.Unmarshal([]byte(msg.Payload), &resp); err != nil {
-				rm.lo.Error("failed to unmarshal response", "error", err)
 				continue
 			}
 			return &resp, nil
 
 		case <-timer.C:
-			return nil, fmt.Errorf("AI request timeout after %v", rm.timeout)
+			return nil, fmt.Errorf("request cancelled by timeout")
 		}
 	}
 }
 
-// worker забирает задачи из очереди (каждый worker получает уникальную задачу)
 func (rm *ReplyManager) worker() {
 	for {
-		// BRPop — блокирующая операция, ждёт задачи в очереди
+		// Забираем sessionID из очереди
 		result, err := rm.rd.BRPop(context.Background(), 0, "ai:queue").Result()
 		if err != nil {
 			rm.lo.Error("failed to pop from queue", "error", err)
 			continue
 		}
 
-		// result[0] — имя ключа, result[1] — данные
-		var req models.AIRequest
-		if err := json.Unmarshal([]byte(result[1]), &req); err != nil {
-			rm.lo.Error("failed to unmarshal request", "error", err)
+		sessionID := result[1]
+		sessionKey := fmt.Sprintf("ai:session:%s", sessionID)
+		questionsKey := sessionKey + ":questions"
+		responseChannel := fmt.Sprintf("ai:response:%s", sessionID)
+
+		// Устанавливаем флаг processing
+		if err := rm.rd.SetNX(context.Background(), sessionKey+":processing", "1", rm.timeout).Err(); err != nil {
+			rm.lo.Error("failed to set processing", "error", err)
 			continue
 		}
 
-		rm.lo.Debug("worker processing request", "request_id", req.ID, "question", truncate(req.Question, 50))
-
-		// Обрабатываем запрос
-		resp, err := rm.processRequest(req)
-		if resp == nil {
-			resp = &models.AIResponse{}
+		// Достаём все вопросы из буфера
+		questions, err := rm.rd.LRange(context.Background(), questionsKey, 0, -1).Result()
+		if err != nil {
+			rm.lo.Error("failed to get questions", "error", err)
+			rm.rd.Del(context.Background(), sessionKey+":processing")
+			continue
 		}
 
-		// Отправляем ответ в канал запроса
-		responseChannel := fmt.Sprintf("ai:response:%s", req.ID.String())
+		// Удаляем буфер
+		rm.rd.Del(context.Background(), questionsKey)
+
+		// Агрегируем вопросы
+		aggregatedQuestion := strings.Join(questions, " | ")
+
+		// Формируем запрос к ML
+		req := models.AIRequest{
+			Question:  aggregatedQuestion,
+			SessionID: sessionID,
+		}
+
+		// Отправляем запрос к ML
+		resp, err := rm.processRequest(req)
+		if err != nil {
+			rm.lo.Error("failed to process request", "error", err)
+			continue
+		}
+
+		// Публикуем ответ
 		data, err := json.Marshal(resp)
 		if err != nil {
 			rm.lo.Error("failed to marshal response", "error", err)
+			rm.rd.Del(context.Background(), sessionKey+":processing")
 			continue
 		}
+		rm.rd.Publish(context.Background(), responseChannel, data)
 
-		if err := rm.rd.Publish(context.Background(), responseChannel, data).Err(); err != nil {
-			rm.lo.Error("failed to publish response", "error", err)
-		}
+		// Снимаем флаг processing
+		rm.rd.Del(context.Background(), sessionKey+":processing")
 	}
 }
 

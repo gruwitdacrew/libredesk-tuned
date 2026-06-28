@@ -1330,22 +1330,19 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 	case amodels.ActionAiReply:
 
 		question := conv.LastMessage.String
-		var aiReply *aimodels.AIResponse
 
-		// Проверяем кэш
-		if cachedReply, ok := m.aiCache.Get(question); ok {
-			aiReply = cachedReply
-		} else {
-			resp, err := m.aiReply.Process(aimodels.AIRequest{
-				Question:  question,
-				SessionID: conv.UUID,
-			})
-			if err != nil {
-				return fmt.Errorf("error processing message through ai reply: %w", err)
-			}
-
-			aiReply = resp
+		// // Проверяем кэш
+		// if cachedReply, ok := m.aiCache.Get(question); ok {
+		// 	aiReply = cachedReply
+		// } else {
+		aiReply, err := m.aiReply.Process(aimodels.AIRequest{
+			Question:  question,
+			SessionID: conv.UUID,
+		})
+		if err != nil {
+			return fmt.Errorf("error processing message through ai reply: %w", err)
 		}
+		// }
 
 		// Получаем variant (по умолчанию 1, если не задан)
 		variant := 1
@@ -1387,7 +1384,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 
 		// Automated ai replies always go to the contact only. CCs from the
 		// conversation history are deliberately not carried forward.
-		_, err := m.QueueReply(
+		_, err = m.QueueReply(
 			[]mmodels.Media{},
 			conv.InboxID,
 			user.ID,
