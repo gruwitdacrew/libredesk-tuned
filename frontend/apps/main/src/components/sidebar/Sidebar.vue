@@ -265,39 +265,6 @@ const viewToDelete = ref(null)
          чтобы useSidebar()/inject() нашёл контекст -->
     <SwipeWrapper />
 
-    <!-- Contacts sidebar -->
-    <template
-      v-if="route.matched.some((record) => record.name && record.name.startsWith('contact'))"
-    >
-      <Sidebar collapsible="offcanvas" class="sidebar-secondary">
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <div class="px-1">
-                <span class="font-semibold text-xl">
-                  {{ t('globals.terms.contact', 2) }}
-                </span>
-              </div>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarMenu>
-              <SidebarMenuItem v-for="item in filteredContactsNavItems" :key="item.titleKey">
-                <SidebarMenuButton :isActive="isActiveParent(item.href)" asChild>
-                  <router-link :to="item.href">
-                    <component :is="navIconMap[item.icon]" v-if="item.icon" />
-                    <span>{{ t(item.allLabelKey) }}</span>
-                  </router-link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-      </Sidebar>
-    </template>
-
     <!-- Reports sidebar -->
     <template
       v-if="

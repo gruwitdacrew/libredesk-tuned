@@ -79,20 +79,6 @@
         </AccordionContent>
       </AccordionItem>
 
-      <!-- Contact notes -->
-      <AccordionItem
-        value="contact_notes"
-        class="accordion-item"
-        v-if="conversationStore.current?.contact?.id && userStore.can('contact_notes:read')"
-      >
-        <AccordionTrigger class="accordion-trigger">
-          {{ $t('globals.terms.note', 2) }}
-        </AccordionTrigger>
-        <AccordionContent class="accordion-content">
-          <ContactNotes :contact-id="conversationStore.current.contact.id" compact />
-        </AccordionContent>
-      </AccordionItem>
-
       <!-- Previous conversations -->
       <AccordionItem value="previous_conversations" class="accordion-item">
         <AccordionTrigger class="accordion-trigger">
