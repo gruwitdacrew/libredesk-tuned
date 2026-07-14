@@ -2,6 +2,7 @@ import { createChatActions, type ChatActions } from '@actions';
 import type { LibredeskConfig, WidgetContext } from '@types';
 import { createLibredeskApi, type LibredeskApi } from '../core/api/libredesk';
 import { createLibredeskWs } from '../core/ws/libredesk.ws';
+import { initAbEvents } from '../core/ab/abEvents';
 
 export interface ChatRuntime {
 	api: LibredeskApi;
@@ -41,6 +42,8 @@ export const createChatRuntime = (ctx: WidgetContext, config: LibredeskConfig): 
 			void chatActions.resyncActiveConversation();
 		},
 	});
+
+	initAbEvents(ws.send); // A/B tracking (remove with core/ab)
 
 	ctx.onDestroy(
 		ctx.store.subscribe(

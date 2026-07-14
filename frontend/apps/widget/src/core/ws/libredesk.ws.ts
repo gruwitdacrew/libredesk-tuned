@@ -217,10 +217,11 @@ export const createLibredeskWs = (config: LibredeskConfig, handlers: WsHandlers)
 		socket = null;
 	};
 
-	return { init, close };
+	return { init, close, send };
 };
 
 export interface LibredeskWs {
 	init: (token: string) => void;
 	close: () => void;
+	send: (data: object) => void;
 }
