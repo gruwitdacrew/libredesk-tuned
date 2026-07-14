@@ -1,6 +1,7 @@
 import type { Channel, WidgetContext } from '@types'
 import { el, iconLabelButton, lockChoice, selectChoice } from '@utils'
 import { CHANNELS, CHANNEL_ORDER, isChannel } from '../../../core/static/channels'
+import { abChannelSelected } from '../../../core/ab/abEvents'
 
 /**
  * Пузырь escalation_2: кнопки каналов + инлайновая подсказка, которая обновляется
@@ -35,6 +36,7 @@ export const buildEscalation2Btns = (
         selectChoice(all, button)
         showPrompt(channel)
         onChannelSelect(channel)
+        abChannelSelected(ctx.store.getStore().conversationUuid, channel)
       }
     }) as HTMLButtonElement
     byChannel.set(channel, button)

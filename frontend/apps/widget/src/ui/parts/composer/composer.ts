@@ -2,6 +2,7 @@ import type { WidgetContext } from '@types'
 import { el, iconLabelButton } from '@utils'
 import { CHANNELS, isChannel } from '../../../core/static/channels'
 import { validateContact } from '@widget/utils/contactsValidation'
+import { abContactsValid, abContactsInvalid } from '../../../core/ab/abEvents'
 import DOMPurify from 'dompurify'
 
 const MAX_LENGTH = 4000
@@ -43,6 +44,9 @@ export const createComposer = (
       const validationResult = validateContact(text, s.escalation2State)
 
       if (!validationResult) {
+        if (isChannel(s.escalation2State)) {
+          abContactsInvalid(s.conversationUuid, s.escalation2State)
+        }
         ctx.store.setStore((s) => ({
           ...s,
           messages: [
@@ -67,6 +71,10 @@ export const createComposer = (
         textarea.value = ''
         textarea.focus()
         return
+      }
+
+      if (isChannel(s.escalation2State)) {
+        abContactsValid(s.conversationUuid, s.escalation2State)
       }
     }
 
