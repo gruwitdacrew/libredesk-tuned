@@ -16,6 +16,7 @@
   "actions.applyMacro": "Apply macro",
   "actions.assignAgent": "Assign agent",
   "actions.assignTeam": "Assign team",
+  "actions.checkForCode": "Check for code",
   "actions.noActions": "No actions",
   "actions.removeLink": "Remove link",
   "actions.removeTags": "Remove tags",

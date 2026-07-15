@@ -17,13 +17,15 @@ import (
 )
 
 const (
-	WidgetMsgTypeJoin      = "join"
-	WidgetMsgTypeTyping    = "typing"
-	WidgetMsgTypePing      = "ping"
-	WidgetMsgTypePong      = "pong"
-	WidgetMsgTypeError     = "error"
-	WidgetMsgTypeJoined    = "joined"
-	WidgetMsgTypePageVisit = "page_visit"
+	WidgetMsgTypeJoin            = "join"
+	WidgetMsgTypeTyping          = "typing"
+	WidgetMsgTypePing            = "ping"
+	WidgetMsgTypePong            = "pong"
+	WidgetMsgTypeError           = "error"
+	WidgetMsgTypeJoined          = "joined"
+	WidgetMsgTypePageVisit       = "page_visit"
+	WidgetMsgTypeChannelSelected = "channel_selected"
+	WidgetMsgTypeContactsInvalid = "contacts_invalid"
 
 	pageVisitRedisKeyPrefix = "page_visits:"
 	maxPageVisits           = 20
@@ -54,6 +56,11 @@ type WidgetInboxJoinRequest struct {
 type WidgetTypingData struct {
 	ConversationUUID string `json:"conversation_uuid"`
 	IsTyping         bool   `json:"is_typing"`
+}
+
+type ChannelSelectedData struct {
+	ConversationUUID string `json:"conversation_uuid"`
+	Channel          string `json:"channel"`
 }
 
 type WidgetPageVisitData struct {
@@ -181,6 +188,14 @@ func handleWidgetWS(r *fastglue.Request) error {
 				if err := sc.WriteJSON(WidgetMessage{Type: WidgetMsgTypePong}); err != nil {
 					app.lo.Error("error writing pong to widget client", "error", err)
 				}
+			case WidgetMsgTypeChannelSelected:
+				var channelSelectedData ChannelSelectedData
+				if err := json.Unmarshal(msg.Data, &channelSelectedData); err != nil || channelSelectedData.ConversationUUID == "" {
+					return
+				}
+				app.eventLog.ChannelSelected(userID, channelSelectedData.Channel)
+			case WidgetMsgTypeContactsInvalid:
+				app.eventLog.ContactsInvalid(userID)
 			}
 		}
 	}); err != nil {

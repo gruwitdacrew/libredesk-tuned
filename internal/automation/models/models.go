@@ -16,6 +16,7 @@ const (
 	ActionSendPrivateNote = "send_private_note"
 	ActionReply           = "send_reply"
 	ActionAiReply         = "send_ai_reply"
+	ActionCheckForCode    = "check_for_code"
 	ActionSetSLA          = "set_sla"
 	ActionAddTags         = "add_tags"
 	ActionSetTags         = "set_tags"

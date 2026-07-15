@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -27,6 +28,7 @@ import (
 	csatModels "github.com/abhinavxd/libredesk/internal/csat/models"
 	"github.com/abhinavxd/libredesk/internal/dbutil"
 	"github.com/abhinavxd/libredesk/internal/envelope"
+	eventlog "github.com/abhinavxd/libredesk/internal/event_log"
 	"github.com/abhinavxd/libredesk/internal/inbox"
 	imodels "github.com/abhinavxd/libredesk/internal/inbox/models"
 	mmodels "github.com/abhinavxd/libredesk/internal/media/models"
@@ -83,6 +85,7 @@ type Manager struct {
 	template                   *template.Manager
 	aiReply                    *ai.ReplyManager
 	aiCache                    *ai.CacheManager
+	eventLog                   *eventlog.Manager
 	incomingMessageQueue       chan models.IncomingMessage
 	outgoingMessageQueue       chan models.Message
 	outgoingProcessingMessages sync.Map
@@ -208,6 +211,7 @@ func New(
 	template *template.Manager,
 	aiReply *ai.ReplyManager,
 	aiCache *ai.CacheManager,
+	eventLog *eventlog.Manager,
 	webhook webhookStore,
 	dispatcher *notifier.Dispatcher,
 	opts Opts) (*Manager, error) {
@@ -255,6 +259,7 @@ func New(
 		template:                   template,
 		aiReply:                    aiReply,
 		aiCache:                    aiCache,
+		eventLog:                   eventLog,
 		db:                         opts.DB,
 		lo:                         opts.Lo,
 		incomingMessageQueue:       make(chan models.IncomingMessage, opts.IncomingMessageQueueSize),
@@ -1327,6 +1332,23 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 		if err != nil {
 			return fmt.Errorf("sending reply: %w", err)
 		}
+
+	case amodels.ActionCheckForCode:
+		question := conv.LastMessage.String
+
+		// If 6-digit code detected then create event in database
+		code := detectAccessCode(question)
+		if code != "" {
+
+			visitor, err := m.userStore.Get(conv.ContactID, "", []string{umodels.UserTypeContact})
+			if err != nil {
+				return fmt.Errorf("error get user: %w", err)
+			}
+
+			m.eventLog.AssociatedChannelDialogCreated(visitor.ID, code, conv.InboxChannel)
+		}
+
+		return m.SetConversationTags(conv.UUID, amodels.ActionAddTags, action.Value, user)
 	case amodels.ActionAiReply:
 
 		question := conv.LastMessage.String
@@ -1346,8 +1368,9 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 
 		// Получаем variant (по умолчанию 1, если не задан)
 		variant := 1
+		var visitor umodels.User
 		if aiReply.ShouldEscalate() {
-			visitor, err := m.userStore.Get(conv.ContactID, "", []string{umodels.UserTypeVisitor})
+			visitor, err = m.userStore.Get(conv.ContactID, "", []string{umodels.UserTypeVisitor})
 			if err != nil {
 				return fmt.Errorf("error get user: %w", err)
 			}
@@ -1355,7 +1378,7 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 				variant = visitor.EscalationVariant.Int
 			}
 		}
-		answer, msg_type := aiReply.PrepareAnswer(variant)
+		answer, msg_type, code := aiReply.PrepareAnswer(variant)
 		// if msg_type != "msg_error" {
 		// 	m.aiCache.Set(question, aiReply)
 		// }
@@ -1371,6 +1394,9 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			if err != nil {
 				return fmt.Errorf("updating conversation status: %w", err)
 			}
+
+			m.eventLog.Escalation1(visitor.ID, code)
+
 		} else if msg_type == "msg_escalation_2" {
 			statusID, err := strconv.Atoi(action.Value[0])
 			if err != nil {
@@ -1380,6 +1406,8 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 			if err != nil {
 				return fmt.Errorf("updating conversation status: %w", err)
 			}
+
+			m.eventLog.Escalation2(visitor.ID)
 		}
 
 		// Automated ai replies always go to the contact only. CCs from the
@@ -1567,6 +1595,14 @@ func (c *Manager) getConversationTags(uuid string) ([]string, error) {
 		return tags, envelope.NewError(envelope.GeneralError, c.i18n.T("globals.messages.somethingWentWrong"), nil)
 	}
 	return tags, nil
+}
+
+// detectAccessCode ищет 6-значный код в тексте
+func detectAccessCode(text string) string {
+	// Регулярка для поиска 6 цифр подряд
+	re := regexp.MustCompile(`\b\d{6}\b`)
+	matches := re.FindString(text)
+	return matches
 }
 
 // makeConversationsListQuery prepares a SQL query string for conversations list

@@ -22,6 +22,7 @@ import (
 	"github.com/abhinavxd/libredesk/internal/colorlog"
 	"github.com/abhinavxd/libredesk/internal/csat"
 	customAttribute "github.com/abhinavxd/libredesk/internal/custom_attribute"
+	eventlog "github.com/abhinavxd/libredesk/internal/event_log"
 	"github.com/abhinavxd/libredesk/internal/macro"
 	notifier "github.com/abhinavxd/libredesk/internal/notification"
 	"github.com/abhinavxd/libredesk/internal/report"
@@ -103,6 +104,7 @@ type App struct {
 	ai               *ai.Manager
 	search           *search.Manager
 	activityLog      *activitylog.Manager
+	eventLog         *eventlog.Manager
 	notifier         *notifier.Service
 	userNotification *notifier.UserNotificationManager
 	customAttribute  *customAttribute.Manager
@@ -217,6 +219,7 @@ func main() {
 		template                    = initTemplate(db, fs, constants, i18n)
 		aiReplyManager              = initAIReplyManager(rdb)
 		aiCacheManager              = initAICacheManager(rdb)
+		eventLog                    = initEventLog(db, i18n)
 		media                       = initMedia(db, i18n, settings)
 		inbox                       = initInbox(db, i18n)
 		team                        = initTeam(db, i18n)
@@ -229,7 +232,7 @@ func main() {
 		notifDispatcher             = initNotifDispatcher(userNotification, notifier, wsHub, ko.Bool("notification.email.enabled"))
 		automation                  = initAutomationEngine(db, i18n)
 		sla                         = initSLA(db, team, settings, businessHours, template, user, i18n, notifDispatcher)
-		conversation                = initConversations(i18n, sla, status, priority, wsHub, db, inbox, user, team, media, settings, csat, automation, template, aiReplyManager, aiCacheManager, webhook, notifDispatcher)
+		conversation                = initConversations(i18n, sla, status, priority, wsHub, db, inbox, user, team, media, settings, csat, automation, template, aiReplyManager, aiCacheManager, eventLog, webhook, notifDispatcher)
 		autoassigner                = initAutoAssigner(team, user, conversation)
 		rateLimiter                 = initRateLimit(rdb)
 	)
@@ -276,6 +279,7 @@ func main() {
 		automation:       automation,
 		businessHours:    businessHours,
 		activityLog:      initActivityLog(db, i18n),
+		eventLog:         eventLog,
 		customAttribute:  initCustomAttribute(db, i18n),
 		authz:            initAuthz(i18n),
 		view:             initView(db, i18n),

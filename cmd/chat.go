@@ -12,6 +12,7 @@ import (
 	"math"
 	mathRand "math/rand"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -595,6 +596,13 @@ func handleChatSendMessage(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 
+	if conversation.Status == null.StringFrom(cmodels.StatusContactCollect) {
+		_, err = extractContact(req.Message)
+		if err == nil {
+			app.eventLog.ContactsValid(senderID)
+		}
+	}
+
 	// Insert incoming message and run post processing hooks.
 	message := cmodels.Message{
 		ConversationUUID: conversationUUID,
@@ -613,6 +621,31 @@ func handleChatSendMessage(r *fastglue.Request) error {
 	}
 
 	return sendChatMessageResponse(app, r, message.UUID)
+}
+
+func extractContact(message string) (contact string, err error) {
+	patterns := map[string]*regexp.Regexp{
+		"email":    regexp.MustCompile(`(?i)^\s*Почта\s*:\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})`),
+		"telegram": regexp.MustCompile(`(?i)^\s*Телеграм\s*:\s*(@?[a-zA-Z0-9_]{5,32}|\+?\d{10,15})`),
+		"max":      regexp.MustCompile(`(?i)^\s*Макс\s*:\s*(\+?\d{10,15})`),
+	}
+
+	var channel string
+
+	for ch, re := range patterns {
+		matches := re.FindStringSubmatch(message)
+		if len(matches) > 1 {
+			channel = ch
+			contact = matches[1]
+			break
+		}
+	}
+
+	if channel == "" {
+		return "", fmt.Errorf("contact not found or not valid")
+	}
+
+	return contact, nil
 }
 
 // handleWidgetMediaUpload handles media uploads for the widget.

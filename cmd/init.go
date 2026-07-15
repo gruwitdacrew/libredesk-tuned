@@ -27,6 +27,7 @@ import (
 	"github.com/abhinavxd/libredesk/internal/conversation/status"
 	"github.com/abhinavxd/libredesk/internal/csat"
 	customAttribute "github.com/abhinavxd/libredesk/internal/custom_attribute"
+	eventlog "github.com/abhinavxd/libredesk/internal/event_log"
 	"github.com/abhinavxd/libredesk/internal/importer"
 	"github.com/abhinavxd/libredesk/internal/inbox"
 	"github.com/abhinavxd/libredesk/internal/inbox/channel/email"
@@ -297,6 +298,7 @@ func initConversations(
 	template *tmpl.Manager,
 	aiReplyManager *ai.ReplyManager,
 	aiCacheManager *ai.CacheManager,
+	eventLog *eventlog.Manager,
 	webhook *webhook.Manager,
 	dispatcher *notifier.Dispatcher,
 ) *conversation.Manager {
@@ -305,7 +307,7 @@ func initConversations(
 		continuityConfig.BatchCheckInterval = ko.MustDuration("conversation.continuity_scan_interval")
 	}
 
-	c, err := conversation.New(hub, i18n, sla, status, priority, inboxStore, userStore, teamStore, mediaStore, settings, csat, automationEngine, template, aiReplyManager, aiCacheManager, webhook, dispatcher, conversation.Opts{
+	c, err := conversation.New(hub, i18n, sla, status, priority, inboxStore, userStore, teamStore, mediaStore, settings, csat, automationEngine, template, aiReplyManager, aiCacheManager, eventLog, webhook, dispatcher, conversation.Opts{
 		DB:                       db,
 		Lo:                       initLogger("conversation_manager"),
 		OutgoingMessageQueueSize: ko.MustInt("message.outgoing_queue_size"),
@@ -1052,6 +1054,20 @@ func initCustomAttribute(db *sqlx.DB, i18n *i18n.I18n) *customAttribute.Manager 
 func initActivityLog(db *sqlx.DB, i18n *i18n.I18n) *activitylog.Manager {
 	lo := initLogger("activity-log")
 	m, err := activitylog.New(activitylog.Opts{
+		DB:   db,
+		Lo:   lo,
+		I18n: i18n,
+	})
+	if err != nil {
+		log.Fatalf("error initializing activity log manager: %v", err)
+	}
+	return m
+}
+
+// initEventLog inits activity log manager.
+func initEventLog(db *sqlx.DB, i18n *i18n.I18n) *eventlog.Manager {
+	lo := initLogger("event-log")
+	m, err := eventlog.New(eventlog.Opts{
 		DB:   db,
 		Lo:   lo,
 		I18n: i18n,

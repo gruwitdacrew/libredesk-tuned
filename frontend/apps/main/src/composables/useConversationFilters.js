@@ -233,6 +233,10 @@ export function useConversationFilters () {
             type: FIELD_TYPE.SELECT,
             options: cStore.statusOptionsNoSnooze
         },
+        check_for_code: {
+            label: t('actions.checkForCode'),
+            type: FIELD_TYPE.TAG
+        },
         send_csat: {
             label: t('actions.sendCsat'),
         },

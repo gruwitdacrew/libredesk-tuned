@@ -114,21 +114,21 @@ func (r *AIResponse) ShouldEscalate() bool {
 	return true
 }
 
-func (r *AIResponse) escalate(preEscalationMessage string, escalationVariant int) (string, string) {
+func (r *AIResponse) escalate(preEscalationMessage string, escalationVariant int) (string, string, string) {
 	if escalationVariant == 1 {
 		// Генерируем код обращения (6 цифр)
-		accessCode := r.generateAccessCode()
-		return fmt.Sprintf(preEscalationMessage+"Свяжитесь с руководителем направления Александрой Емельяновой любым удобным для вас способом:\n* по телефону +7 (3822) 701 777, доб. 6870\n* или через каналы связи ниже\n\n**Код обращения**: %s\n\nПожалуйста укажите код при обращении, это поможет Александре понять суть вашего вопроса.", accessCode), "msg_escalation_1"
+		code := r.generateAccessCode()
+		return fmt.Sprintf(preEscalationMessage+"Свяжитесь с руководителем направления Александрой Емельяновой любым удобным для вас способом:\n* по телефону +7 (3822) 701 777, доб. 6870\n* или через каналы связи ниже\n\n**Код обращения**: %s\n\nПожалуйста укажите код при обращении, это поможет Александре понять суть вашего вопроса.", code), "msg_escalation_1", code
 	} else {
-		return preEscalationMessage + "Оставьте заявку на связь с руководителем направления Александрой Емельяновой или свяжитесь с ней самостоятельно по телефону +7 (3822) 701 777, доб. 6870\n\nВыберите удобный способ связи:", "msg_escalation_2"
+		return preEscalationMessage + "Оставьте заявку на связь с руководителем направления Александрой Емельяновой или свяжитесь с ней самостоятельно по телефону +7 (3822) 701 777, доб. 6870\n\nВыберите удобный способ связи:", "msg_escalation_2", ""
 	}
 }
 
 // PrepareAnswer подготавливает ответ для отправки пользователю
-func (r *AIResponse) PrepareAnswer(escalationVariant int) (string, string) {
+func (r *AIResponse) PrepareAnswer(escalationVariant int) (string, string, string) {
 	if r.Answer != "" && r.RefusalReason == "" {
 		// Случай 1: нет отказа/эскалации — показываем обычный ответ
-		return r.Answer, "msg_plain"
+		return r.Answer, "msg_plain", ""
 	}
 
 	switch r.RefusalReason {
@@ -138,7 +138,7 @@ func (r *AIResponse) PrepareAnswer(escalationVariant int) (string, string) {
 
 	case "guardrails":
 		// Случай 3: сработали guardrails — msg_fallback
-		return "Я не совсем понял ваш вопрос. Вот что я могу:\n* рассказать о программах, расписании и стоимости курсов;\n* подобрать обучение под ваш запрос;\n* прислать шаблоны документов.\n\nПереформулируйте, пожалуйста, запрос – и я постараюсь помочь.", "msg_fallback"
+		return "Я не совсем понял ваш вопрос. Вот что я могу:\n* рассказать о программах, расписании и стоимости курсов;\n* подобрать обучение под ваш запрос;\n* прислать шаблоны документов.\n\nПереформулируйте, пожалуйста, запрос – и я постараюсь помочь.", "msg_fallback", ""
 
 	case "contact_info":
 		// Случай 4: запрос контактов — msg_escalation_1 / msg_escalation_2_step1 (без первого предложения)
@@ -146,18 +146,18 @@ func (r *AIResponse) PrepareAnswer(escalationVariant int) (string, string) {
 
 	case "smalltalk_thanks":
 		// Случай 5: благодарность
-		return "Пожалуйста! Если понадобится уточнить информацию по курсам или подобрать обучение под вашу задачу, напишите вопрос.", "msg_thanks"
+		return "Пожалуйста! Если понадобится уточнить информацию по курсам или подобрать обучение под вашу задачу, напишите вопрос.", "msg_thanks", ""
 
 	case "smalltalk_greeting":
 		// Случай 6: приветствие
-		return "Здравствуйте!\n\nКакой вопрос вас интересует?", "msg_greeting"
+		return "Здравствуйте!\n\nКакой вопрос вас интересует?", "msg_greeting", ""
 
 	default:
-		// Неизвестный refusal_reason или его отсутствие — эскалация
+		// Неизвестный refusal_reason или его отсутствие
 		if r.Answer != "" {
-			return r.Answer, "msg_unknown"
+			return r.Answer, "msg_unknown", ""
 		} else {
-			return "Что-то пошло не так, попробуйте повторить запрос позже или свяжитесь с руководителем направления.", "msg_error"
+			return "Что-то пошло не так, попробуйте повторить запрос позже или свяжитесь с руководителем направления.", "msg_error", ""
 		}
 	}
 }
